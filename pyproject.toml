@@ -64,23 +64,6 @@ disallow_untyped_defs = false
 
 [tool.coverage.run]
 branch = true
-source = [
-    "braghook",
-    "tests",
-]
-# source_pkgs = [
-#     "braghook",
-# ]
-
-[tool.coverage.paths]
-source = [
-    "braghook",
-    "*/site-packages",
-]
-test = [
-    "tests/",
-    "*/tests",
-]
 
 [tool.coverage.report]
 exclude_lines =[
