@@ -23,6 +23,7 @@ classifiers = [
 
 dependencies = [
     "httpx>=0.23.1",
+    "runtime_yolk>=1.2.2",
 ]
 
 [project.optional-dependencies]
@@ -44,8 +45,8 @@ test = [
 [project.urls]
 homepage = "https://github.com/Preocts/braghook"
 
-[tool.setuptools.package-data]
-"braghook" = ["py.typed"]
+[project.scripts]
+braghook = "braghook:main"
 
 [tool.mypy]
 check_untyped_defs = true
@@ -72,7 +73,7 @@ source_pkgs = [
 
 [tool.coverage.paths]
 source = [
-    "src/",
+    "braghook.py",
     "*/site-packages",
 ]
 test = [
