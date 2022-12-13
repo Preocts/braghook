@@ -64,6 +64,23 @@ disallow_untyped_defs = false
 
 [tool.coverage.run]
 branch = true
+source = [
+    ".",
+]
+omit = [
+    "setup.py",
+]
+
+[tool.coverage.paths]
+source = [
+    ".",
+    "*/braghook",
+]
+test = [
+    "tests/",
+    "*/tests",
+]
+
 
 [tool.coverage.report]
 exclude_lines =[
