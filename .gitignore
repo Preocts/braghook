@@ -1,3 +1,8 @@
+# program files
+brag-*
+braghook.ini
+
+# general ignore
 temp_*
 .env
 venv/
