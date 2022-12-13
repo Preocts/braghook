@@ -64,6 +64,13 @@ disallow_untyped_defs = false
 
 [tool.coverage.run]
 branch = true
+source = [
+    ".",
+]
+omit = [
+    "setup.py",
+]
+
 
 [tool.coverage.report]
 exclude_lines =[
