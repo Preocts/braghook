@@ -21,11 +21,20 @@ DEFAULT_CONFIG = {
         "author": "braghook",
         "author_icon": "",
         "discord_webhook": "",
+        "discord_webhook_plain": "",
     },
 }
+DEFAULT_FILE = """### {date} [Optional: Add a title here]
+
+Write your brag here. Summarize what you did today, what you learned,
+ and what you plan to do tomorrow.
+
+- Bullet specific things you did (meetings, tasks, etc.)
+  - Nest details such as links to tasks, commits, or PRs
+"""
 
 
-@dataclass(frozen=True)
+@dataclass()
 class Config:
     """Dataclass for the configuration."""
 
@@ -35,6 +44,7 @@ class Config:
     author: str
     author_icon: str
     discord_webhook: str
+    discord_webhook_plain: str
 
 
 def load_config(config_file: str, env_file: str) -> Config:
@@ -51,18 +61,27 @@ def load_config(config_file: str, env_file: str) -> Config:
         author=config.get("author", fallback="braghook"),
         author_icon=config.get("author_icon", fallback=""),
         discord_webhook=config.get("discord_webhook", fallback=""),
+        discord_webhook_plain=config.get("discord_webhook_plain", fallback=""),
     )
 
 
 def open_editor(config: Config, filename: str) -> None:
     """Open the editor."""
-    # Filename is the current date
+    if not Path(filename).exists():
+        create_file(filename)
+
     config.editor_args.append(str(filename))
     subprocess.run([config.editor, *config.editor_args])
 
 
-def create_filename(config: Config) -> str:
-    """Create the filename."""
+def create_file(filename: str) -> None:
+    """Create the file."""
+    with open(filename, "w") as file:
+        file.write(DEFAULT_FILE.format(date=datetime.now().strftime("%Y-%m-%d")))
+
+
+def get_filename(config: Config) -> str:
+    """Get the filename."""
     return str(config.workdir / datetime.now().strftime("brag-%Y-%m-%d.md"))
 
 
@@ -70,6 +89,13 @@ def read_file(filename: str) -> str:
     """Read the file."""
     with open(filename) as file:
         return file.read()
+
+
+def build_discord_webhook_plain(
+    content: str,
+) -> dict[str, Any]:
+    """Build the Discord webhook."""
+    return {"username": "braghook", "content": content}
 
 
 def build_discord_webhook(
@@ -97,16 +123,25 @@ def build_discord_webhook(
     }
 
 
-def send_discord_webhook(config: Config, content: str, filename: str) -> None:
-    """Send the Discord webhook."""
-    data = build_discord_webhook(config, content, filename)
-    httpx.post(config.discord_webhook, json=data)
+def post_message(
+    url: str, data: dict[str, Any], headers: dict[str, str] | None = None
+) -> None:
+    """Post the message to defined webhooks in config."""
+    httpx.post(url, json=data, headers=headers)
 
 
 def send_message(config: Config, content: str, filename: str) -> None:
     """Send the message to defined webhooks in config."""
     if config.discord_webhook != "":
-        send_discord_webhook(config, content, filename)
+        post_message(
+            url=config.discord_webhook,
+            data=build_discord_webhook(config, content, filename),
+        )
+    if config.discord_webhook_plain != "":
+        post_message(
+            url=config.discord_webhook_plain,
+            data=build_discord_webhook_plain(content),
+        )
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:
@@ -176,7 +211,7 @@ def main(_args: list[str] | None = None) -> int:
         return 0
 
     config = load_config(args.config, args.env)
-    filename = args.bragfile or create_filename(config)
+    filename = args.bragfile or get_filename(config)
 
     open_editor(config, filename)
 

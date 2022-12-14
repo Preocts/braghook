@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import tempfile
-from collections.abc import Generator
 from configparser import ConfigParser
 from datetime import datetime
 from pathlib import Path
@@ -11,20 +10,22 @@ from unittest.mock import patch
 import pytest
 
 import braghook
+from braghook import Config
 
 MOCKFILE_CONTENTS = "# Bragging rights"
 
 
 @pytest.fixture
-def filled_file() -> Generator[Path, None, None]:
-    try:
-        with tempfile.NamedTemporaryFile(mode="w", delete=False) as file:
-            file.write(MOCKFILE_CONTENTS)
-
-        yield Path(file.name)
-
-    finally:
-        os.remove(file.name)
+def config() -> Config:
+    return Config(
+        workdir=Path("."),
+        editor="vim",
+        editor_args=["--test_flag"],
+        author="braghook",
+        author_icon="",
+        discord_webhook="",
+        discord_webhook_plain="",
+    )
 
 
 def test_load_config() -> None:
@@ -33,55 +34,65 @@ def test_load_config() -> None:
     assert config.workdir == Path(".")
     assert config.editor == "vim"
     assert config.editor_args == []
-    assert config.discord_webhook == ""
     assert config.author == "braghook"
     assert config.author_icon == ""
+    assert config.discord_webhook == ""
+    assert config.discord_webhook_plain == ""
 
 
-def test_create_filename() -> None:
-    config = braghook.Config(
-        workdir=Path("."),
-        editor="vim",
-        editor_args=[],
-        discord_webhook="",
-        author="",
-        author_icon="",
-    )
+def test_get_filename(config: Config) -> None:
+    # Fun fact, this can fail if you run it at midnight
     filename = config.workdir / datetime.now().strftime("brag-%Y-%m-%d.md")
 
-    assert braghook.create_filename(config) == str(filename)
+    assert braghook.get_filename(config) == str(filename)
 
 
-def test_open_editor() -> None:
-    config = braghook.Config(
-        workdir=Path("."),
-        editor="vim",
-        editor_args=["--test_flag"],
-        discord_webhook="",
-        author="",
-        author_icon="",
-    )
-    filename = str(config.workdir / datetime.now().strftime("brag-%Y-%m-%d.md"))
+def test_open_editor_file_exists(config: Config) -> None:
+    with tempfile.NamedTemporaryFile(mode="w") as file:
+        with patch("subprocess.run") as mock_run:
+            with patch("braghook.create_file") as mock_create_file:
+                braghook.open_editor(config, file.name)
+
+                mock_run.assert_called_once_with(["vim", "--test_flag", str(file.name)])
+                mock_create_file.assert_not_called()
+
+
+def test_open_editor_file_does_not_exist(config: Config) -> None:
+    filename = "tests/test-brag.md"
 
     with patch("subprocess.run") as mock_run:
-        braghook.open_editor(config, filename)
+        with patch("braghook.create_file") as mock_create_file:
+            braghook.open_editor(config, filename)
 
-        mock_run.assert_called_once_with(["vim", "--test_flag", str(filename)])
-
-
-def test_read_file(filled_file: Path) -> None:
-    assert braghook.read_file(str(filled_file)) == MOCKFILE_CONTENTS
+            mock_create_file.assert_called_once_with(filename)
+            mock_run.assert_called_once_with(["vim", "--test_flag", str(filename)])
 
 
-def test_send_message_discord() -> None:
-    config = braghook.Config(
-        workdir=Path("."),
-        editor="vim",
-        editor_args=[],
-        discord_webhook="https://discord.com/api/webhooks/1234567890/abcdefghij",
-        author="",
-        author_icon="",
-    )
+def test_read_file() -> None:
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as file:
+            file.write(MOCKFILE_CONTENTS)
+
+        assert braghook.read_file(file.name) == MOCKFILE_CONTENTS
+
+    finally:
+        os.remove(file.name)
+
+
+def test_create_file() -> None:
+    filename = "tests/test-brag.md"
+
+    try:
+        braghook.create_file(filename)
+
+        assert Path(filename).is_file()
+
+    finally:
+        os.remove(filename)
+
+
+def test_send_message_discord(config: Config) -> None:
+    config.discord_webhook = "https://discord.com/api/webhooks/1234567890/abcdefghij"
     message = "Test message"
     expected_webhook = braghook.build_discord_webhook(config, message, "mock")
 
@@ -91,18 +102,28 @@ def test_send_message_discord() -> None:
         mock_post.assert_called_once_with(
             config.discord_webhook,
             json=expected_webhook,
+            headers=None,
         )
 
 
-def test_send_message_no_hooks() -> None:
-    config = braghook.Config(
-        workdir=Path("."),
-        editor="vim",
-        editor_args=[],
-        discord_webhook="",
-        author="",
-        author_icon="",
+def test_send_message_discord_plain(config: Config) -> None:
+    config.discord_webhook_plain = (
+        "https://discord.com/api/webhooks/1234567890/abcdefghij"
     )
+    message = "Test message"
+    expected_webhook = braghook.build_discord_webhook_plain(message)
+
+    with patch("httpx.post") as mock_post:
+        braghook.send_message(config, message, "mock")
+
+        mock_post.assert_called_once_with(
+            config.discord_webhook_plain,
+            json=expected_webhook,
+            headers=None,
+        )
+
+
+def test_send_message_no_hooks(config: Config) -> None:
     message = "Test message"
 
     with patch("httpx.post") as mock_post:
