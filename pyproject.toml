@@ -120,7 +120,7 @@ commands =
 deps =
     mypy
 commands =
-    mypy -p braghook
+    mypy -p braghook --no-incremental
 
 [testenv:pre-commit]
 depends = coverage

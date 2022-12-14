@@ -18,9 +18,9 @@ DEFAULT_CONFIG = {
         "workdir": ".",
         "editor": "vim",
         "editor_args": "",
-        "discord_webhook": "",
         "author": "braghook",
         "author_icon": "",
+        "discord_webhook": "",
     },
 }
 
@@ -32,9 +32,9 @@ class Config:
     workdir: Path
     editor: str
     editor_args: list[str]
-    discord_webhook: str
     author: str
     author_icon: str
+    discord_webhook: str
 
 
 def load_config(config_file: str, env_file: str) -> Config:
@@ -48,9 +48,9 @@ def load_config(config_file: str, env_file: str) -> Config:
         workdir=Path(config.get("workdir", fallback=".")),
         editor=config.get("editor", fallback="vim"),
         editor_args=config.get("editor_args", fallback="").split(),
-        discord_webhook=config.get("discord_webhook", fallback=""),
         author=config.get("author", fallback="braghook"),
         author_icon=config.get("author_icon", fallback=""),
+        discord_webhook=config.get("discord_webhook", fallback=""),
     )
 
 
@@ -156,6 +156,11 @@ def get_input(prompt: str) -> str:
 
 def create_config(config_file: str) -> None:
     """Create the config file."""
+    # Avoid overwriting existing config
+    if Path(config_file).exists():
+        print(f"Config file already exists: {config_file}")
+        return
+
     config = ConfigParser()
     config.read_dict(DEFAULT_CONFIG)
     with open(config_file, "w") as file:
