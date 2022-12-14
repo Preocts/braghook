@@ -16,20 +16,6 @@ Recording daily achievements and posting them via webhooks.
 python -m pip install .
 ```
 
-### Config file:
-
-```ini
-[DEFAULT]
-workdir = .
-editor = vim
-editor_args =
-  --optional
-  values
-discord_webhook = https://
-author = yourname
-author_icon = https://
-```
-
 ### Usage:
 
 ```console
@@ -45,6 +31,31 @@ optional arguments:
                         The config file to use
   --env ENV, -e ENV     The env file to use
   ```
+
+### Config file:
+
+```ini
+[DEFAULT]
+workdir = .
+editor = vim
+editor_args =
+  --optional
+  values
+author = yourname
+author_icon = https://
+discord_webhook = https://
+discord_webhook_plain = https://
+```
+
+| field                 | value                                              | required |
+| --------------------- | -------------------------------------------------- | -------- |
+| workdir               | Target path for new brag files                     | yes      |
+| editor                | Which editor to open                               | yes      |
+| editor_args           | Multiline of optional editor arguments             | no       |
+| author                | Your name, used in webhook posts, where applicable | no       |
+| authorh_icon          | URL to icon for webhook, where applicable          | no       |
+| discord_webhook       | URL of discord webhook - formatted as embed        | no       |
+| discord_webhook_plain | URL of discord webhook - posted as plain-text      | no       |
 
 ---
 
