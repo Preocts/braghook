@@ -145,14 +145,29 @@ def test_create_config_with_tempfile() -> None:
 
     with tempfile.NamedTemporaryFile(mode="w", delete=False) as file:
         ...
+    os.remove(file.name)
+
+    braghook.create_config(file.name)
 
     try:
-        braghook.create_config(file.name)
-
         actual_config = ConfigParser()
         actual_config.read(file.name)
 
         assert actual_config == expected_config
+
+    finally:
+        os.remove(file.name)
+
+
+def test_create_config_does_not_overwrite() -> None:
+    with tempfile.NamedTemporaryFile(mode="w", delete=False) as file:
+        file.write("[braghook]\n")
+
+    try:
+        with patch("braghook.ConfigParser.write") as mock_write:
+            braghook.create_config(file.name)
+
+        mock_write.assert_not_called()
 
     finally:
         os.remove(file.name)
