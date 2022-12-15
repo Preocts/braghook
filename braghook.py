@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import argparse
+import dataclasses
+import re
 import subprocess
 from configparser import ConfigParser
-from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -13,17 +14,6 @@ from runtime_yolk import Yolk
 
 DEFAULT_CONFIG_FILE = "braghook"
 DEFAULT_ENV_FILE = ".env"
-DEFAULT_CONFIG = {
-    "DEFAULT": {
-        "workdir": ".",
-        "editor": "vim",
-        "editor_args": "",
-        "author": "braghook",
-        "author_icon": "",
-        "discord_webhook": "",
-        "discord_webhook_plain": "",
-    },
-}
 DEFAULT_FILE = """### {date} [Optional: Add a title here]
 
 Write your brag here. Summarize what you did today, what you learned,
@@ -34,17 +24,17 @@ Write your brag here. Summarize what you did today, what you learned,
 """
 
 
-@dataclass()
+@dataclasses.dataclass(frozen=True)
 class Config:
     """Dataclass for the configuration."""
 
-    workdir: Path
-    editor: str
-    editor_args: list[str]
-    author: str
-    author_icon: str
-    discord_webhook: str
-    discord_webhook_plain: str
+    workdir: str = "."
+    editor: str = "vim"
+    editor_args: list[str] = dataclasses.field(default_factory=list)
+    author: str = "braghook"
+    author_icon: str = ""
+    discord_webhook: str = ""
+    discord_webhook_plain: str = ""
 
 
 def load_config(config_file: str, env_file: str) -> Config:
@@ -55,7 +45,7 @@ def load_config(config_file: str, env_file: str) -> Config:
     config = yolk.config["DEFAULT"]
 
     return Config(
-        workdir=Path(config.get("workdir", fallback=".")),
+        workdir=config.get("workdir", fallback="."),
         editor=config.get("editor", fallback="vim"),
         editor_args=config.get("editor_args", fallback="").split(),
         author=config.get("author", fallback="braghook"),
@@ -82,7 +72,7 @@ def create_file(filename: str) -> None:
 
 def get_filename(config: Config) -> str:
     """Get the filename."""
-    return str(config.workdir / datetime.now().strftime("brag-%Y-%m-%d.md"))
+    return str(Path(config.workdir) / datetime.now().strftime("brag-%Y-%m-%d.md"))
 
 
 def read_file(filename: str) -> str:
@@ -95,32 +85,42 @@ def build_discord_webhook_plain(
     content: str,
 ) -> dict[str, Any]:
     """Build the Discord webhook."""
-    return {"username": "braghook", "content": content}
+    return {"username": "braghook", "content": f"```{content}```"}
 
 
 def build_discord_webhook(
-    config: Config,
+    author: str,
+    author_icon: str,
     content: str,
-    filename: str,
 ) -> dict[str, Any]:
     """Build the Discord webhook."""
+    title = extract_title_from_message(content)
+    content = re.sub(r"^[-*]\s?", r":small_blue_diamond: ", content, flags=re.MULTILINE)
+    content = re.sub(
+        r"^(\s*)[-*]\s?", r":small_orange_diamond: ", content, flags=re.MULTILINE
+    )
+    content = re.sub(r"^#{1,4}\s(.+)$", r"**\1**", content, flags=re.MULTILINE)
+
     return {
         "username": "braghook",
         "embeds": [
             {
                 "author": {
-                    "name": config.author,
-                    "icon_url": config.author_icon,
+                    "name": author,
+                    "icon_url": author_icon,
                 },
-                "title": filename,
+                "title": title,
                 "description": content,
-                "color": 0x00FF00,
-                "footer": {
-                    "text": "Created using: https://github.com/Preocts/braghook",
-                },
+                "color": 0x9C5D7F,
             },
         ],
     }
+
+
+def extract_title_from_message(message: str) -> str:
+    """Extract the title from the message."""
+    match = re.search(r"^#{1,4}\s(.+)$", message, re.MULTILINE)
+    return match.group(1).strip() if match else ""
 
 
 def post_message(
@@ -135,7 +135,11 @@ def send_message(config: Config, content: str, filename: str) -> None:
     if config.discord_webhook != "":
         post_message(
             url=config.discord_webhook,
-            data=build_discord_webhook(config, content, filename),
+            data=build_discord_webhook(
+                author=config.author,
+                author_icon=config.author_icon,
+                content=content,
+            ),
         )
     if config.discord_webhook_plain != "":
         post_message(
@@ -197,7 +201,7 @@ def create_config(config_file: str) -> None:
         return
 
     config = ConfigParser()
-    config.read_dict(DEFAULT_CONFIG)
+    config.read_dict({"DEFAULT": dataclasses.asdict(Config())})
     with open(config_file, "w") as file:
         config.write(file)
 

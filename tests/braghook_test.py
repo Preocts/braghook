@@ -3,11 +3,10 @@ from __future__ import annotations
 import os
 import tempfile
 from configparser import ConfigParser
+from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
-
-import pytest
 
 import braghook
 from braghook import Config
@@ -15,23 +14,10 @@ from braghook import Config
 MOCKFILE_CONTENTS = "# Bragging rights"
 
 
-@pytest.fixture
-def config() -> Config:
-    return Config(
-        workdir=Path("."),
-        editor="vim",
-        editor_args=["--test_flag"],
-        author="braghook",
-        author_icon="",
-        discord_webhook="",
-        discord_webhook_plain="",
-    )
-
-
 def test_load_config() -> None:
     config = braghook.load_config("tests/braghook.ini", "tests/.env")
 
-    assert config.workdir == Path(".")
+    assert config.workdir == "."
     assert config.editor == "vim"
     assert config.editor_args == []
     assert config.author == "braghook"
@@ -40,14 +26,16 @@ def test_load_config() -> None:
     assert config.discord_webhook_plain == ""
 
 
-def test_get_filename(config: Config) -> None:
+def test_get_filename() -> None:
+    config = Config()
     # Fun fact, this can fail if you run it at midnight
-    filename = config.workdir / datetime.now().strftime("brag-%Y-%m-%d.md")
+    filename = Path(config.workdir) / datetime.now().strftime("brag-%Y-%m-%d.md")
 
     assert braghook.get_filename(config) == str(filename)
 
 
-def test_open_editor_file_exists(config: Config) -> None:
+def test_open_editor_file_exists() -> None:
+    config = Config(editor_args=["--test_flag"])
     with tempfile.NamedTemporaryFile(mode="w") as file:
         with patch("subprocess.run") as mock_run:
             with patch("braghook.create_file") as mock_create_file:
@@ -57,7 +45,8 @@ def test_open_editor_file_exists(config: Config) -> None:
                 mock_create_file.assert_not_called()
 
 
-def test_open_editor_file_does_not_exist(config: Config) -> None:
+def test_open_editor_file_does_not_exist() -> None:
+    config = Config(editor_args=["--test_flag"])
     filename = "tests/test-brag.md"
 
     with patch("subprocess.run") as mock_run:
@@ -91,10 +80,16 @@ def test_create_file() -> None:
         os.remove(filename)
 
 
-def test_send_message_discord(config: Config) -> None:
-    config.discord_webhook = "https://discord.com/api/webhooks/1234567890/abcdefghij"
+def test_send_message_discord() -> None:
+    config = Config(
+        discord_webhook="https://discord.com/api/webhooks/1234567890/abcdefghij"
+    )
     message = "Test message"
-    expected_webhook = braghook.build_discord_webhook(config, message, "mock")
+    expected_webhook = braghook.build_discord_webhook(
+        author=config.author,
+        author_icon=config.author_icon,
+        content=message,
+    )
 
     with patch("httpx.post") as mock_post:
         braghook.send_message(config, message, "mock")
@@ -106,9 +101,9 @@ def test_send_message_discord(config: Config) -> None:
         )
 
 
-def test_send_message_discord_plain(config: Config) -> None:
-    config.discord_webhook_plain = (
-        "https://discord.com/api/webhooks/1234567890/abcdefghij"
+def test_send_message_discord_plain() -> None:
+    config = Config(
+        discord_webhook_plain="https://discord.com/api/webhooks/1234567890/abcdefghij",
     )
     message = "Test message"
     expected_webhook = braghook.build_discord_webhook_plain(message)
@@ -123,7 +118,8 @@ def test_send_message_discord_plain(config: Config) -> None:
         )
 
 
-def test_send_message_no_hooks(config: Config) -> None:
+def test_send_message_no_hooks() -> None:
+    config = Config()
     message = "Test message"
 
     with patch("httpx.post") as mock_post:
@@ -162,7 +158,7 @@ def test_parse_args() -> None:
 
 def test_create_config_with_tempfile() -> None:
     expected_config = ConfigParser()
-    expected_config.read_dict(braghook.DEFAULT_CONFIG)
+    expected_config.read_dict({"DEFAULT": asdict(Config())})
 
     with tempfile.NamedTemporaryFile(mode="w", delete=False) as file:
         ...
@@ -192,6 +188,13 @@ def test_create_config_does_not_overwrite() -> None:
 
     finally:
         os.remove(file.name)
+
+
+def test_extract_title_from_message() -> None:
+    message = "## Test message \n Test message body"
+    expected_title = "Test message"
+
+    assert braghook.extract_title_from_message(message) == expected_title
 
 
 def test_main() -> None:
