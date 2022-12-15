@@ -190,6 +190,13 @@ def test_create_config_does_not_overwrite() -> None:
         os.remove(file.name)
 
 
+def test_extract_title_from_message() -> None:
+    message = "## Test message \n Test message body"
+    expected_title = "Test message"
+
+    assert braghook.extract_title_from_message(message) == expected_title
+
+
 def test_main() -> None:
     with patch("braghook.load_config") as mock_load_config:
         with patch("braghook.open_editor") as mock_open_editor:

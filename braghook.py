@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
+import re
 import subprocess
 from configparser import ConfigParser
 from datetime import datetime
@@ -84,7 +85,7 @@ def build_discord_webhook_plain(
     content: str,
 ) -> dict[str, Any]:
     """Build the Discord webhook."""
-    return {"username": "braghook", "content": content}
+    return {"username": "braghook", "content": f"```{content}```"}
 
 
 def build_discord_webhook(
@@ -93,6 +94,13 @@ def build_discord_webhook(
     content: str,
 ) -> dict[str, Any]:
     """Build the Discord webhook."""
+    title = extract_title_from_message(content)
+    content = re.sub(r"^[-*]\s?", r":small_blue_diamond: ", content, flags=re.MULTILINE)
+    content = re.sub(
+        r"^(\s*)[-*]\s?", r":small_orange_diamond: ", content, flags=re.MULTILINE
+    )
+    content = re.sub(r"^#{1,4}\s(.+)$", r"**\1**", content, flags=re.MULTILINE)
+
     return {
         "username": "braghook",
         "embeds": [
@@ -101,15 +109,18 @@ def build_discord_webhook(
                     "name": author,
                     "icon_url": author_icon,
                 },
-                "title": "TBD",
+                "title": title,
                 "description": content,
-                "color": 0x00FF00,
-                "footer": {
-                    "text": "Created using: https://github.com/Preocts/braghook",
-                },
+                "color": 0x9C5D7F,
             },
         ],
     }
+
+
+def extract_title_from_message(message: str) -> str:
+    """Extract the title from the message."""
+    match = re.search(r"^#{1,4}\s(.+)$", message, re.MULTILINE)
+    return match.group(1).strip() if match else ""
 
 
 def post_message(
