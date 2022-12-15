@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import subprocess
 from configparser import ConfigParser
-from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -13,17 +13,6 @@ from runtime_yolk import Yolk
 
 DEFAULT_CONFIG_FILE = "braghook"
 DEFAULT_ENV_FILE = ".env"
-DEFAULT_CONFIG = {
-    "DEFAULT": {
-        "workdir": ".",
-        "editor": "vim",
-        "editor_args": "",
-        "author": "braghook",
-        "author_icon": "",
-        "discord_webhook": "",
-        "discord_webhook_plain": "",
-    },
-}
 DEFAULT_FILE = """### {date} [Optional: Add a title here]
 
 Write your brag here. Summarize what you did today, what you learned,
@@ -34,17 +23,17 @@ Write your brag here. Summarize what you did today, what you learned,
 """
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class Config:
     """Dataclass for the configuration."""
 
-    workdir: Path
-    editor: str
-    editor_args: list[str]
-    author: str
-    author_icon: str
-    discord_webhook: str
-    discord_webhook_plain: str
+    workdir: str = "."
+    editor: str = "vim"
+    editor_args: list[str] = dataclasses.field(default_factory=list)
+    author: str = "braghook"
+    author_icon: str = ""
+    discord_webhook: str = ""
+    discord_webhook_plain: str = ""
 
 
 def load_config(config_file: str, env_file: str) -> Config:
@@ -55,7 +44,7 @@ def load_config(config_file: str, env_file: str) -> Config:
     config = yolk.config["DEFAULT"]
 
     return Config(
-        workdir=Path(config.get("workdir", fallback=".")),
+        workdir=config.get("workdir", fallback="."),
         editor=config.get("editor", fallback="vim"),
         editor_args=config.get("editor_args", fallback="").split(),
         author=config.get("author", fallback="braghook"),
@@ -82,7 +71,7 @@ def create_file(filename: str) -> None:
 
 def get_filename(config: Config) -> str:
     """Get the filename."""
-    return str(config.workdir / datetime.now().strftime("brag-%Y-%m-%d.md"))
+    return str(Path(config.workdir) / datetime.now().strftime("brag-%Y-%m-%d.md"))
 
 
 def read_file(filename: str) -> str:
@@ -201,7 +190,7 @@ def create_config(config_file: str) -> None:
         return
 
     config = ConfigParser()
-    config.read_dict(DEFAULT_CONFIG)
+    config.read_dict({"DEFAULT": dataclasses.asdict(Config())})
     with open(config_file, "w") as file:
         config.write(file)
 
