@@ -91,10 +91,22 @@ def test_create_file() -> None:
         os.remove(filename)
 
 
-def test_send_message_discord(config: Config) -> None:
-    config.discord_webhook = "https://discord.com/api/webhooks/1234567890/abcdefghij"
+def test_send_message_discord() -> None:
+    config = Config(
+        workdir=Path("."),
+        editor="vim",
+        editor_args=["--test_flag"],
+        author="braghook",
+        author_icon="",
+        discord_webhook="https://discord.com/api/webhooks/1234567890/abcdefghij",
+        discord_webhook_plain="",
+    )
     message = "Test message"
-    expected_webhook = braghook.build_discord_webhook(config, message, "mock")
+    expected_webhook = braghook.build_discord_webhook(
+        author=config.author,
+        author_icon=config.author_icon,
+        content=message,
+    )
 
     with patch("httpx.post") as mock_post:
         braghook.send_message(config, message, "mock")
@@ -106,9 +118,15 @@ def test_send_message_discord(config: Config) -> None:
         )
 
 
-def test_send_message_discord_plain(config: Config) -> None:
-    config.discord_webhook_plain = (
-        "https://discord.com/api/webhooks/1234567890/abcdefghij"
+def test_send_message_discord_plain() -> None:
+    config = Config(
+        workdir=Path("."),
+        editor="vim",
+        editor_args=["--test_flag"],
+        author="braghook",
+        author_icon="",
+        discord_webhook="",
+        discord_webhook_plain="https://discord.com/api/webhooks/1234567890/abcdefghij",
     )
     message = "Test message"
     expected_webhook = braghook.build_discord_webhook_plain(message)

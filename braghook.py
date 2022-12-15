@@ -34,7 +34,7 @@ Write your brag here. Summarize what you did today, what you learned,
 """
 
 
-@dataclass()
+@dataclass(frozen=True)
 class Config:
     """Dataclass for the configuration."""
 
@@ -99,9 +99,9 @@ def build_discord_webhook_plain(
 
 
 def build_discord_webhook(
-    config: Config,
+    author: str,
+    author_icon: str,
     content: str,
-    filename: str,
 ) -> dict[str, Any]:
     """Build the Discord webhook."""
     return {
@@ -109,10 +109,10 @@ def build_discord_webhook(
         "embeds": [
             {
                 "author": {
-                    "name": config.author,
-                    "icon_url": config.author_icon,
+                    "name": author,
+                    "icon_url": author_icon,
                 },
-                "title": filename,
+                "title": "TBD",
                 "description": content,
                 "color": 0x00FF00,
                 "footer": {
@@ -135,7 +135,11 @@ def send_message(config: Config, content: str, filename: str) -> None:
     if config.discord_webhook != "":
         post_message(
             url=config.discord_webhook,
-            data=build_discord_webhook(config, content, filename),
+            data=build_discord_webhook(
+                author=config.author,
+                author_icon=config.author_icon,
+                content=content,
+            ),
         )
     if config.discord_webhook_plain != "":
         post_message(
