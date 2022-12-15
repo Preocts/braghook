@@ -55,7 +55,13 @@ discord_webhook_plain = https://
 | author                | Your name, used in webhook posts, where applicable | no       |
 | authorh_icon          | URL to icon for webhook, where applicable          | no       |
 | discord_webhook       | URL of discord webhook - formatted as embed        | no       |
-| discord_webhook_plain | URL of discord webhook - posted as plain-text      | no       |
+| discord_webhook_plain | URL of discord webhook - posted as code-block      | no       |
+
+---
+
+### Example Discord hooks:
+
+![discord_hooks.png](images/discord_hooks.png)
 
 ---
 
