@@ -35,6 +35,7 @@ class Config:
     author_icon: str = ""
     discord_webhook: str = ""
     discord_webhook_plain: str = ""
+    msteams_webhook: str = ""
 
 
 def load_config(config_file: str, env_file: str) -> Config:
@@ -52,6 +53,7 @@ def load_config(config_file: str, env_file: str) -> Config:
         author_icon=config.get("author_icon", fallback=""),
         discord_webhook=config.get("discord_webhook", fallback=""),
         discord_webhook_plain=config.get("discord_webhook_plain", fallback=""),
+        msteams_webhook=config.get("msteams_webhook", fallback=""),
     )
 
 
@@ -226,10 +228,21 @@ def send_message(config: Config, content: str, filename: str) -> None:
                 content=content,
             ),
         )
+
     if config.discord_webhook_plain != "":
         post_message(
             url=config.discord_webhook_plain,
             data=build_discord_webhook_plain(content),
+        )
+
+    if config.msteams_webhook != "":
+        post_message(
+            url=config.msteams_webhook,
+            data=build_msteams_webhook(
+                author=config.author,
+                author_icon=config.author_icon,
+                content=content,
+            ),
         )
 
 

@@ -24,6 +24,7 @@ def test_load_config() -> None:
     assert config.author_icon == ""
     assert config.discord_webhook == ""
     assert config.discord_webhook_plain == ""
+    assert config.msteams_webhook == ""
 
 
 def test_get_filename() -> None:
@@ -113,6 +114,27 @@ def test_send_message_discord_plain() -> None:
 
         mock_post.assert_called_once_with(
             config.discord_webhook_plain,
+            json=expected_webhook,
+            headers=None,
+        )
+
+
+def test_send_message_msteams() -> None:
+    config = Config(
+        msteams_webhook="https://outlook.office.com/webhook/1234567890/abcdefghij"
+    )
+    message = "Test message"
+    expected_webhook = braghook.build_msteams_webhook(
+        author=config.author,
+        author_icon=config.author_icon,
+        content=message,
+    )
+
+    with patch("httpx.post") as mock_post:
+        braghook.send_message(config, message, "mock")
+
+        mock_post.assert_called_once_with(
+            config.msteams_webhook,
             json=expected_webhook,
             headers=None,
         )
