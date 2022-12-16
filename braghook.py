@@ -126,6 +126,7 @@ def build_msteams_webhook(
 ) -> dict[str, Any]:
     """Build the MSTeams webhook."""
     title = extract_title_from_message(content)
+    content = re.sub(r"^#{1,4}\s(.+)$", r"**\1**", content, flags=re.MULTILINE)
     return {
         "type": "message",
         "attachments": [
@@ -170,7 +171,14 @@ def build_msteams_webhook(
                                             "size": "default",
                                             "weight": "bolder",
                                             "wrap": True,
-                                        }
+                                        },
+                                        {
+                                            "type": "TextBlock",
+                                            "text": "Daily Brag",
+                                            "spacing": "none",
+                                            "isSubtle": True,
+                                            "wrap": True,
+                                        },
                                     ],
                                 },
                             ],
