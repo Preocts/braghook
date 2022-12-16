@@ -30,11 +30,12 @@ class Config:
 
     workdir: str = "."
     editor: str = "vim"
-    editor_args: list[str] = dataclasses.field(default_factory=list)
+    editor_args: str = ""
     author: str = "braghook"
     author_icon: str = ""
     discord_webhook: str = ""
     discord_webhook_plain: str = ""
+    msteams_webhook: str = ""
 
 
 def load_config(config_file: str, env_file: str) -> Config:
@@ -47,11 +48,12 @@ def load_config(config_file: str, env_file: str) -> Config:
     return Config(
         workdir=config.get("workdir", fallback="."),
         editor=config.get("editor", fallback="vim"),
-        editor_args=config.get("editor_args", fallback="").split(),
+        editor_args=config.get("editor_args", fallback=""),
         author=config.get("author", fallback="braghook"),
         author_icon=config.get("author_icon", fallback=""),
         discord_webhook=config.get("discord_webhook", fallback=""),
         discord_webhook_plain=config.get("discord_webhook_plain", fallback=""),
+        msteams_webhook=config.get("msteams_webhook", fallback=""),
     )
 
 
@@ -59,9 +61,10 @@ def open_editor(config: Config, filename: str) -> None:
     """Open the editor."""
     if not Path(filename).exists():
         create_file(filename)
+    args = config.editor_args.split()
 
-    config.editor_args.append(str(filename))
-    subprocess.run([config.editor, *config.editor_args])
+    args.append(str(filename))
+    subprocess.run([config.editor, *args])
 
 
 def create_file(filename: str) -> None:
@@ -117,6 +120,99 @@ def build_discord_webhook(
     }
 
 
+def build_msteams_webhook(
+    author: str,
+    author_icon: str,
+    content: str,
+) -> dict[str, Any]:
+    """Build the MSTeams webhook."""
+    title = extract_title_from_message(content)
+    content = re.sub(r"^#{1,4}\s(.+)$", r"**\1**", content, flags=re.MULTILINE)
+    return {
+        "type": "message",
+        "attachments": [
+            {
+                "contentType": "application/vnd.microsoft.card.adaptive",
+                "content": {
+                    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                    "version": "1.2",
+                    "type": "AdaptiveCard",
+                    "themeColor": "9C5D7F",
+                    "body": [
+                        {
+                            "type": "TextBlock",
+                            "text": title,
+                            "size": "medium",
+                            "weight": "bolder",
+                            "style": "heading",
+                        },
+                        {
+                            "type": "ColumnSet",
+                            "columns": [
+                                {
+                                    "type": "Column",
+                                    "width": "auto",
+                                    "items": [
+                                        {
+                                            "type": "Image",
+                                            "url": author_icon,
+                                            "size": "small",
+                                            "style": "person",
+                                            "fallback": "drop",
+                                        }
+                                    ],
+                                },
+                                {
+                                    "type": "Column",
+                                    "width": "stretch",
+                                    "items": [
+                                        {
+                                            "type": "TextBlock",
+                                            "text": author,
+                                            "size": "default",
+                                            "weight": "bolder",
+                                            "wrap": True,
+                                        },
+                                        {
+                                            "type": "TextBlock",
+                                            "text": "Daily Brag",
+                                            "spacing": "none",
+                                            "isSubtle": True,
+                                            "wrap": True,
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                        {
+                            "type": "TextBlock",
+                            "text": content,
+                            "size": "default",
+                            "weight": "default",
+                            "wrap": True,
+                            "fallback": "drop",
+                            "separator": True,
+                            "id": "contentToToggle",
+                            "isVisible": False,
+                        },
+                    ],
+                    "actions": [
+                        {
+                            "type": "Action.ToggleVisibility",
+                            "title": "Toggle Content",
+                            "targetElements": ["contentToToggle"],
+                        },
+                    ],
+                    "msteams": {
+                        "width": "Full",
+                        "entities": [],
+                    },
+                },
+            }
+        ],
+    }
+
+
 def extract_title_from_message(message: str) -> str:
     """Extract the title from the message."""
     match = re.search(r"^#{1,4}\s(.+)$", message, re.MULTILINE)
@@ -141,10 +237,21 @@ def send_message(config: Config, content: str, filename: str) -> None:
                 content=content,
             ),
         )
+
     if config.discord_webhook_plain != "":
         post_message(
             url=config.discord_webhook_plain,
             data=build_discord_webhook_plain(content),
+        )
+
+    if config.msteams_webhook != "":
+        post_message(
+            url=config.msteams_webhook,
+            data=build_msteams_webhook(
+                author=config.author,
+                author_icon=config.author_icon,
+                content=content,
+            ),
         )
 
 

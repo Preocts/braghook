@@ -19,11 +19,12 @@ def test_load_config() -> None:
 
     assert config.workdir == "."
     assert config.editor == "vim"
-    assert config.editor_args == []
+    assert config.editor_args == ""
     assert config.author == "braghook"
     assert config.author_icon == ""
     assert config.discord_webhook == ""
     assert config.discord_webhook_plain == ""
+    assert config.msteams_webhook == ""
 
 
 def test_get_filename() -> None:
@@ -35,7 +36,7 @@ def test_get_filename() -> None:
 
 
 def test_open_editor_file_exists() -> None:
-    config = Config(editor_args=["--test_flag"])
+    config = Config(editor_args="--test_flag")
     with tempfile.NamedTemporaryFile(mode="w") as file:
         with patch("subprocess.run") as mock_run:
             with patch("braghook.create_file") as mock_create_file:
@@ -46,7 +47,7 @@ def test_open_editor_file_exists() -> None:
 
 
 def test_open_editor_file_does_not_exist() -> None:
-    config = Config(editor_args=["--test_flag"])
+    config = Config(editor_args="--test_flag")
     filename = "tests/test-brag.md"
 
     with patch("subprocess.run") as mock_run:
@@ -113,6 +114,27 @@ def test_send_message_discord_plain() -> None:
 
         mock_post.assert_called_once_with(
             config.discord_webhook_plain,
+            json=expected_webhook,
+            headers=None,
+        )
+
+
+def test_send_message_msteams() -> None:
+    config = Config(
+        msteams_webhook="https://outlook.office.com/webhook/1234567890/abcdefghij"
+    )
+    message = "Test message"
+    expected_webhook = braghook.build_msteams_webhook(
+        author=config.author,
+        author_icon=config.author_icon,
+        content=message,
+    )
+
+    with patch("httpx.post") as mock_post:
+        braghook.send_message(config, message, "mock")
+
+        mock_post.assert_called_once_with(
+            config.msteams_webhook,
             json=expected_webhook,
             headers=None,
         )
