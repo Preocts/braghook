@@ -30,7 +30,7 @@ class Config:
 
     workdir: str = "."
     editor: str = "vim"
-    editor_args: list[str] = dataclasses.field(default_factory=list)
+    editor_args: str = ""
     author: str = "braghook"
     author_icon: str = ""
     discord_webhook: str = ""
@@ -48,7 +48,7 @@ def load_config(config_file: str, env_file: str) -> Config:
     return Config(
         workdir=config.get("workdir", fallback="."),
         editor=config.get("editor", fallback="vim"),
-        editor_args=config.get("editor_args", fallback="").split(),
+        editor_args=config.get("editor_args", fallback=""),
         author=config.get("author", fallback="braghook"),
         author_icon=config.get("author_icon", fallback=""),
         discord_webhook=config.get("discord_webhook", fallback=""),
@@ -61,9 +61,10 @@ def open_editor(config: Config, filename: str) -> None:
     """Open the editor."""
     if not Path(filename).exists():
         create_file(filename)
+    args = config.editor_args.split()
 
-    config.editor_args.append(str(filename))
-    subprocess.run([config.editor, *config.editor_args])
+    args.append(str(filename))
+    subprocess.run([config.editor, *args])
 
 
 def create_file(filename: str) -> None:

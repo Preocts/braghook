@@ -19,7 +19,7 @@ def test_load_config() -> None:
 
     assert config.workdir == "."
     assert config.editor == "vim"
-    assert config.editor_args == []
+    assert config.editor_args == ""
     assert config.author == "braghook"
     assert config.author_icon == ""
     assert config.discord_webhook == ""
@@ -36,7 +36,7 @@ def test_get_filename() -> None:
 
 
 def test_open_editor_file_exists() -> None:
-    config = Config(editor_args=["--test_flag"])
+    config = Config(editor_args="--test_flag")
     with tempfile.NamedTemporaryFile(mode="w") as file:
         with patch("subprocess.run") as mock_run:
             with patch("braghook.create_file") as mock_create_file:
@@ -47,7 +47,7 @@ def test_open_editor_file_exists() -> None:
 
 
 def test_open_editor_file_does_not_exist() -> None:
-    config = Config(editor_args=["--test_flag"])
+    config = Config(editor_args="--test_flag")
     filename = "tests/test-brag.md"
 
     with patch("subprocess.run") as mock_run:
