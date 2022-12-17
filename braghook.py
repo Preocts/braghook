@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-from runtime_yolk import Yolk
 
 DEFAULT_CONFIG_FILE = "braghook"
 DEFAULT_ENV_FILE = ".env"
@@ -38,22 +37,21 @@ class Config:
     msteams_webhook: str = ""
 
 
-def load_config(config_file: str, env_file: str) -> Config:
+def load_config(config_file: str) -> Config:
     """Load the configuration."""
-    yolk = Yolk()
-    yolk.load_env(env_file)
-    yolk.load_config(config_file)
-    config = yolk.config["DEFAULT"]
+    config = ConfigParser()
+    config.read(config_file)
+    default = config["DEFAULT"]
 
     return Config(
-        workdir=config.get("workdir", fallback="."),
-        editor=config.get("editor", fallback="vim"),
-        editor_args=config.get("editor_args", fallback=""),
-        author=config.get("author", fallback="braghook"),
-        author_icon=config.get("author_icon", fallback=""),
-        discord_webhook=config.get("discord_webhook", fallback=""),
-        discord_webhook_plain=config.get("discord_webhook_plain", fallback=""),
-        msteams_webhook=config.get("msteams_webhook", fallback=""),
+        workdir=default.get("workdir", fallback="."),
+        editor=default.get("editor", fallback="vim"),
+        editor_args=default.get("editor_args", fallback=""),
+        author=default.get("author", fallback="braghook"),
+        author_icon=default.get("author_icon", fallback=""),
+        discord_webhook=default.get("discord_webhook", fallback=""),
+        discord_webhook_plain=default.get("discord_webhook_plain", fallback=""),
+        msteams_webhook=default.get("msteams_webhook", fallback=""),
     )
 
 
@@ -284,14 +282,6 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         default=DEFAULT_CONFIG_FILE,
         help="The config file to use",
     )
-    parser.add_argument(
-        "--env",
-        "-e",
-        type=str,
-        default=DEFAULT_ENV_FILE,
-        help="The env file to use",
-    )
-
     return parser.parse_args(args)
 
 
@@ -321,7 +311,7 @@ def main(_args: list[str] | None = None) -> int:
         create_config(f"{DEFAULT_CONFIG_FILE}.ini")
         return 0
 
-    config = load_config(args.config, args.env)
+    config = load_config(args.config)
     filename = args.bragfile or get_filename(config)
 
     open_editor(config, filename)

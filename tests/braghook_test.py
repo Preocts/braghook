@@ -15,7 +15,7 @@ MOCKFILE_CONTENTS = "# Bragging rights"
 
 
 def test_load_config() -> None:
-    config = braghook.load_config("tests/braghook.ini", "tests/.env")
+    config = braghook.load_config("tests/braghook.ini")
 
     assert config.workdir == "."
     assert config.editor == "vim"
@@ -162,8 +162,6 @@ def test_parse_args() -> None:
         [
             "--config",
             "tests/braghook.ini",
-            "--env",
-            "tests/.env",
             "--bragfile",
             "tests/brag.md",
             "--create-config",
@@ -172,7 +170,6 @@ def test_parse_args() -> None:
     )
 
     assert args.config == "tests/braghook.ini"
-    assert args.env == "tests/.env"
     assert args.bragfile == "tests/brag.md"
     assert args.create_config
     assert args.auto_send
@@ -231,16 +228,12 @@ def test_main() -> None:
                             [
                                 "--config",
                                 "tests/braghook.ini",
-                                "--env",
-                                "tests/.env",
                                 "--bragfile",
                                 "tests/brag.md",
                             ]
                         )
 
-                        mock_load_config.assert_called_once_with(
-                            "tests/braghook.ini", "tests/.env"
-                        )
+                        mock_load_config.assert_called_once_with("tests/braghook.ini")
                         mock_open_editor.assert_called_once()
                         mock_read_file.assert_called_once()
                         mock_send_message.assert_called_once()
@@ -259,16 +252,12 @@ def test_main_no_send() -> None:
                             [
                                 "--config",
                                 "tests/braghook.ini",
-                                "--env",
-                                "tests/.env",
                                 "--bragfile",
                                 "tests/brag.md",
                             ]
                         )
 
-                        mock_load_config.assert_called_once_with(
-                            "tests/braghook.ini", "tests/.env"
-                        )
+                        mock_load_config.assert_called_once_with("tests/braghook.ini")
                         mock_open_editor.assert_called_once()
                         mock_read_file.assert_not_called()
                         mock_send_message.assert_not_called()
@@ -287,8 +276,6 @@ def test_main_create_config() -> None:
                                 [
                                     "--config",
                                     "tests/braghook.ini",
-                                    "--env",
-                                    "tests/.env",
                                     "--bragfile",
                                     "tests/brag.md",
                                     "--create-config",
