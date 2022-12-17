@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
+import http.client
+import json
+import logging
 import re
 import subprocess
 from configparser import ConfigParser
@@ -9,9 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-import httpx
-
-DEFAULT_CONFIG_FILE = "braghook"
+DEFAULT_CONFIG_FILE = "braghook.ini"
 DEFAULT_ENV_FILE = ".env"
 DEFAULT_FILE = """### {date} [Optional: Add a title here]
 
@@ -21,6 +22,8 @@ Write your brag here. Summarize what you did today, what you learned,
 - Bullet specific things you did (meetings, tasks, etc.)
   - Nest details such as links to tasks, commits, or PRs
 """
+
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -218,13 +221,27 @@ def extract_title_from_message(message: str) -> str:
 
 
 def post_message(
-    url: str, data: dict[str, Any], headers: dict[str, str] | None = None
+    url: str,
+    data: dict[str, Any],
+    headers: dict[str, str] | None = None,
 ) -> None:
     """Post the message to defined webhooks in config."""
-    httpx.post(url, json=data, headers=headers)
+    headers = headers or {"content-type": "application/json"}
+
+    # Remove http(s):// from the url
+    url = url.replace("http://", "").replace("https://", "")
+
+    # Split the url into host and path
+    url_parts = url.split("/", 1)
+
+    conn = http.client.HTTPSConnection(url_parts[0])
+    conn.request("POST", f"/{url_parts[1]}", json.dumps(data), headers)
+    response = conn.getresponse()
+    if response.status not in range(200, 300):
+        logger.error("Error sending message: %s", response.read())
 
 
-def send_message(config: Config, content: str, filename: str) -> None:
+def send_message(config: Config, content: str) -> None:
     """Send the message to defined webhooks in config."""
     if config.discord_webhook != "":
         post_message(
@@ -320,7 +337,7 @@ def main(_args: list[str] | None = None) -> int:
         return 0
 
     content = read_file(filename)
-    send_message(config, content, filename)
+    send_message(config, content)
 
     return 0
 

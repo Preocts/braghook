@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import tempfile
 from configparser import ConfigParser
@@ -7,6 +8,8 @@ from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
+
+import pytest
 
 import braghook
 from braghook import Config
@@ -81,73 +84,84 @@ def test_create_file() -> None:
         os.remove(filename)
 
 
+def test_post_message() -> None:
+    url = "https://discord.com/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz"
+    message = {"message": "Test message"}
+    expected_domain = "discord.com"
+    expected_route = "/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz"
+    expected_headers = {"content-type": "application/json"}
+
+    with patch("http.client.HTTPSConnection") as mock_connection:
+        mock_connection.return_value.getresponse.return_value.status = 204
+        braghook.post_message(url, message)
+
+        mock_connection.assert_called_once_with(expected_domain)
+        mock_connection.return_value.request.assert_called_once_with(
+            "POST", expected_route, json.dumps(message), expected_headers
+        )
+
+
+def test_post_message_failed(caplog: pytest.LogCaptureFixture) -> None:
+    url = "https://discord.com/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz"
+    message = {"message": "Test message"}
+
+    with patch("http.client.HTTPSConnection") as mock_connection:
+        mock_connection.return_value.getresponse.return_value.status = 400
+
+        braghook.post_message(url, message)
+
+        assert "Error sending message:" in caplog.text
+
+
 def test_send_message_discord() -> None:
     config = Config(
-        discord_webhook="https://discord.com/api/webhooks/1234567890/abcdefghij"
+        discord_webhook="https://discord.com/api/webhooks/1234567890/abcdefg"
     )
     message = "Test message"
-    expected_webhook = braghook.build_discord_webhook(
-        author=config.author,
-        author_icon=config.author_icon,
-        content=message,
-    )
+    data = braghook.build_discord_webhook(config.author, config.author_icon, message)
 
-    with patch("httpx.post") as mock_post:
-        braghook.send_message(config, message, "mock")
+    with patch("braghook.post_message") as mock_post_message:
+        braghook.send_message(config, message)
 
-        mock_post.assert_called_once_with(
-            config.discord_webhook,
-            json=expected_webhook,
-            headers=None,
-        )
+        mock_post_message.assert_called_once_with(url=config.discord_webhook, data=data)
 
 
 def test_send_message_discord_plain() -> None:
     config = Config(
-        discord_webhook_plain="https://discord.com/api/webhooks/1234567890/abcdefghij",
+        discord_webhook_plain="https://discord.com/api/webhooks/1234567890/abcdefg"
     )
     message = "Test message"
-    expected_webhook = braghook.build_discord_webhook_plain(message)
+    data = braghook.build_discord_webhook_plain(message)
 
-    with patch("httpx.post") as mock_post:
-        braghook.send_message(config, message, "mock")
+    with patch("braghook.post_message") as mock_post_message:
+        braghook.send_message(config, message)
 
-        mock_post.assert_called_once_with(
-            config.discord_webhook_plain,
-            json=expected_webhook,
-            headers=None,
+        mock_post_message.assert_called_once_with(
+            url=config.discord_webhook_plain, data=data
         )
 
 
 def test_send_message_msteams() -> None:
     config = Config(
-        msteams_webhook="https://outlook.office.com/webhook/1234567890/abcdefghij"
+        msteams_webhook="https://outlook.office.com/webhook/1234567890/abcdefg"
     )
     message = "Test message"
-    expected_webhook = braghook.build_msteams_webhook(
-        author=config.author,
-        author_icon=config.author_icon,
-        content=message,
-    )
+    data = braghook.build_msteams_webhook(config.author, config.author_icon, message)
 
-    with patch("httpx.post") as mock_post:
-        braghook.send_message(config, message, "mock")
+    with patch("braghook.post_message") as mock_post_message:
+        braghook.send_message(config, message)
 
-        mock_post.assert_called_once_with(
-            config.msteams_webhook,
-            json=expected_webhook,
-            headers=None,
-        )
+        mock_post_message.assert_called_once_with(url=config.msteams_webhook, data=data)
 
 
 def test_send_message_no_hooks() -> None:
     config = Config()
     message = "Test message"
 
-    with patch("httpx.post") as mock_post:
-        braghook.send_message(config, message, "mock")
+    with patch("http.client.HTTPSConnection") as mock_connection:
+        braghook.send_message(config, message)
 
-        mock_post.assert_not_called()
+        mock_connection.assert_not_called()
 
 
 def test_get_input() -> None:
