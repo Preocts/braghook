@@ -23,7 +23,6 @@ classifiers = [
 
 dependencies = [
     "httpx>=0.23.1",
-    "runtime_yolk>=1.2.2",
 ]
 
 [project.optional-dependencies]
