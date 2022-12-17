@@ -43,7 +43,10 @@ test = [
 homepage = "https://github.com/Preocts/braghook"
 
 [project.scripts]
-braghook = "braghook:main"
+braghook = "braghook.braghook:main"
+
+[tool.setuptools.package-data]
+"braghook" = ["py.typed"]
 
 [tool.mypy]
 check_untyped_defs = true
@@ -62,16 +65,16 @@ disallow_untyped_defs = false
 [tool.coverage.run]
 branch = true
 source = [
-    ".",
+    "tests",
 ]
-omit = [
-    "setup.py",
+source_pkgs = [
+    "braghook",
 ]
 
 [tool.coverage.paths]
 source = [
-    ".",
-    "*/braghook",
+    "src/",
+    "*/site-packages",
 ]
 test = [
     "tests/",

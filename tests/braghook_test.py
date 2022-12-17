@@ -10,9 +10,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-
-import braghook
-from braghook import Config
+from braghook import braghook
+from braghook.braghook import Config
 
 MOCKFILE_CONTENTS = "# Bragging rights"
 
@@ -42,7 +41,7 @@ def test_open_editor_file_exists() -> None:
     config = Config(editor_args="--test_flag")
     with tempfile.NamedTemporaryFile(mode="w") as file:
         with patch("subprocess.run") as mock_run:
-            with patch("braghook.create_file") as mock_create_file:
+            with patch("braghook.braghook.create_file") as mock_create_file:
                 braghook.open_editor(config, file.name)
 
                 mock_run.assert_called_once_with(["vim", "--test_flag", str(file.name)])
@@ -54,7 +53,7 @@ def test_open_editor_file_does_not_exist() -> None:
     filename = "tests/test-brag.md"
 
     with patch("subprocess.run") as mock_run:
-        with patch("braghook.create_file") as mock_create_file:
+        with patch("braghook.braghook.create_file") as mock_create_file:
             braghook.open_editor(config, filename)
 
             mock_create_file.assert_called_once_with(filename)
@@ -120,7 +119,7 @@ def test_send_message_discord() -> None:
     message = "Test message"
     data = braghook.build_discord_webhook(config.author, config.author_icon, message)
 
-    with patch("braghook.post_message") as mock_post_message:
+    with patch("braghook.braghook.post_message") as mock_post_message:
         braghook.send_message(config, message)
 
         mock_post_message.assert_called_once_with(url=config.discord_webhook, data=data)
@@ -133,7 +132,7 @@ def test_send_message_discord_plain() -> None:
     message = "Test message"
     data = braghook.build_discord_webhook_plain(message)
 
-    with patch("braghook.post_message") as mock_post_message:
+    with patch("braghook.braghook.post_message") as mock_post_message:
         braghook.send_message(config, message)
 
         mock_post_message.assert_called_once_with(
@@ -148,7 +147,7 @@ def test_send_message_msteams() -> None:
     message = "Test message"
     data = braghook.build_msteams_webhook(config.author, config.author_icon, message)
 
-    with patch("braghook.post_message") as mock_post_message:
+    with patch("braghook.braghook.post_message") as mock_post_message:
         braghook.send_message(config, message)
 
         mock_post_message.assert_called_once_with(url=config.msteams_webhook, data=data)
@@ -214,7 +213,7 @@ def test_create_config_does_not_overwrite() -> None:
         file.write("[braghook]\n")
 
     try:
-        with patch("braghook.ConfigParser.write") as mock_write:
+        with patch("braghook.braghook.ConfigParser.write") as mock_write:
             braghook.create_config(file.name)
 
         mock_write.assert_not_called()
@@ -231,11 +230,11 @@ def test_extract_title_from_message() -> None:
 
 
 def test_main() -> None:
-    with patch("braghook.load_config") as mock_load_config:
-        with patch("braghook.open_editor") as mock_open_editor:
-            with patch("braghook.read_file") as mock_read_file:
-                with patch("braghook.send_message") as mock_send_message:
-                    with patch("braghook.get_input") as mock_get_input:
+    with patch("braghook.braghook.load_config") as mock_load_config:
+        with patch("braghook.braghook.open_editor") as mock_open_editor:
+            with patch("braghook.braghook.read_file") as mock_read_file:
+                with patch("braghook.braghook.send_message") as mock_send_message:
+                    with patch("braghook.braghook.get_input") as mock_get_input:
                         mock_get_input.return_value = "y"
 
                         braghook.main(
@@ -255,11 +254,11 @@ def test_main() -> None:
 
 
 def test_main_no_send() -> None:
-    with patch("braghook.load_config") as mock_load_config:
-        with patch("braghook.open_editor") as mock_open_editor:
-            with patch("braghook.read_file") as mock_read_file:
-                with patch("braghook.send_message") as mock_send_message:
-                    with patch("braghook.get_input") as mock_get_input:
+    with patch("braghook.braghook.load_config") as mock_load_config:
+        with patch("braghook.braghook.open_editor") as mock_open_editor:
+            with patch("braghook.braghook.read_file") as mock_read_file:
+                with patch("braghook.braghook.send_message") as mock_send_message:
+                    with patch("braghook.braghook.get_input") as mock_get_input:
                         mock_get_input.return_value = "n"
 
                         braghook.main(
@@ -278,12 +277,12 @@ def test_main_no_send() -> None:
 
 
 def test_main_create_config() -> None:
-    with patch("braghook.create_config") as mock_create_config:
-        with patch("braghook.load_config") as mock_load_config:
-            with patch("braghook.open_editor") as mock_open_editor:
-                with patch("braghook.read_file") as mock_read_file:
-                    with patch("braghook.send_message") as mock_send_message:
-                        with patch("braghook.get_input") as mock_get_input:
+    with patch("braghook.braghook.create_config") as mock_create_config:
+        with patch("braghook.braghook.load_config") as mock_load_config:
+            with patch("braghook.braghook.open_editor") as mock_open_editor:
+                with patch("braghook.braghook.read_file") as mock_read_file:
+                    with patch("braghook.braghook.send_message") as mock_send_message:
+                        with patch("braghook.braghook.get_input") as mock_get_input:
                             mock_get_input.return_value = "y"
 
                             braghook.main(
