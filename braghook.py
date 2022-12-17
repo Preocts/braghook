@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
+import http.client
+import json
+import logging
 import re
 import subprocess
 from configparser import ConfigParser
@@ -9,10 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-import httpx
-from runtime_yolk import Yolk
-
-DEFAULT_CONFIG_FILE = "braghook"
+DEFAULT_CONFIG_FILE = "braghook.ini"
 DEFAULT_ENV_FILE = ".env"
 DEFAULT_FILE = """### {date} [Optional: Add a title here]
 
@@ -22,6 +22,8 @@ Write your brag here. Summarize what you did today, what you learned,
 - Bullet specific things you did (meetings, tasks, etc.)
   - Nest details such as links to tasks, commits, or PRs
 """
+
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -38,22 +40,21 @@ class Config:
     msteams_webhook: str = ""
 
 
-def load_config(config_file: str, env_file: str) -> Config:
+def load_config(config_file: str) -> Config:
     """Load the configuration."""
-    yolk = Yolk()
-    yolk.load_env(env_file)
-    yolk.load_config(config_file)
-    config = yolk.config["DEFAULT"]
+    config = ConfigParser()
+    config.read(config_file)
+    default = config["DEFAULT"]
 
     return Config(
-        workdir=config.get("workdir", fallback="."),
-        editor=config.get("editor", fallback="vim"),
-        editor_args=config.get("editor_args", fallback=""),
-        author=config.get("author", fallback="braghook"),
-        author_icon=config.get("author_icon", fallback=""),
-        discord_webhook=config.get("discord_webhook", fallback=""),
-        discord_webhook_plain=config.get("discord_webhook_plain", fallback=""),
-        msteams_webhook=config.get("msteams_webhook", fallback=""),
+        workdir=default.get("workdir", fallback="."),
+        editor=default.get("editor", fallback="vim"),
+        editor_args=default.get("editor_args", fallback=""),
+        author=default.get("author", fallback="braghook"),
+        author_icon=default.get("author_icon", fallback=""),
+        discord_webhook=default.get("discord_webhook", fallback=""),
+        discord_webhook_plain=default.get("discord_webhook_plain", fallback=""),
+        msteams_webhook=default.get("msteams_webhook", fallback=""),
     )
 
 
@@ -220,13 +221,27 @@ def extract_title_from_message(message: str) -> str:
 
 
 def post_message(
-    url: str, data: dict[str, Any], headers: dict[str, str] | None = None
+    url: str,
+    data: dict[str, Any],
+    headers: dict[str, str] | None = None,
 ) -> None:
     """Post the message to defined webhooks in config."""
-    httpx.post(url, json=data, headers=headers)
+    headers = headers or {"content-type": "application/json"}
+
+    # Remove http(s):// from the url
+    url = url.replace("http://", "").replace("https://", "")
+
+    # Split the url into host and path
+    url_parts = url.split("/", 1)
+
+    conn = http.client.HTTPSConnection(url_parts[0])
+    conn.request("POST", f"/{url_parts[1]}", json.dumps(data), headers)
+    response = conn.getresponse()
+    if response.status not in range(200, 300):
+        logger.error("Error sending message: %s", response.read())
 
 
-def send_message(config: Config, content: str, filename: str) -> None:
+def send_message(config: Config, content: str) -> None:
     """Send the message to defined webhooks in config."""
     if config.discord_webhook != "":
         post_message(
@@ -284,14 +299,6 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         default=DEFAULT_CONFIG_FILE,
         help="The config file to use",
     )
-    parser.add_argument(
-        "--env",
-        "-e",
-        type=str,
-        default=DEFAULT_ENV_FILE,
-        help="The env file to use",
-    )
-
     return parser.parse_args(args)
 
 
@@ -321,7 +328,7 @@ def main(_args: list[str] | None = None) -> int:
         create_config(f"{DEFAULT_CONFIG_FILE}.ini")
         return 0
 
-    config = load_config(args.config, args.env)
+    config = load_config(args.config)
     filename = args.bragfile or get_filename(config)
 
     open_editor(config, filename)
@@ -330,7 +337,7 @@ def main(_args: list[str] | None = None) -> int:
         return 0
 
     content = read_file(filename)
-    send_message(config, content, filename)
+    send_message(config, content)
 
     return 0
 

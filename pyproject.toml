@@ -21,10 +21,7 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython"
 ]
 
-dependencies = [
-    "httpx>=0.23.1",
-    "runtime_yolk>=1.2.2",
-]
+dependencies = []
 
 [project.optional-dependencies]
 dev = [
