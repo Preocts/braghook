@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import argparse
 import dataclasses
 import http.client
 import json
@@ -13,8 +12,7 @@ from pathlib import Path
 from typing import Any
 
 DEFAULT_CONFIG_FILE = "braghook.ini"
-DEFAULT_ENV_FILE = ".env"
-DEFAULT_FILE = """### {date} [Optional: Add a title here]
+DEFAULT_FILE_TEMPLATE = """### {date} [Optional: Add a title here]
 
 Write your brag here. Summarize what you did today, what you learned,
  and what you plan to do tomorrow.
@@ -71,7 +69,9 @@ def open_editor(config: Config, filename: str) -> None:
 def create_file(filename: str) -> None:
     """Create the file."""
     with open(filename, "w") as file:
-        file.write(DEFAULT_FILE.format(date=datetime.now().strftime("%Y-%m-%d")))
+        file.write(
+            DEFAULT_FILE_TEMPLATE.format(date=datetime.now().strftime("%Y-%m-%d"))
+        )
 
 
 def get_filename(config: Config) -> str:
@@ -270,43 +270,6 @@ def send_message(config: Config, content: str) -> None:
         )
 
 
-def parse_args(args: list[str] | None = None) -> argparse.Namespace:
-    """Parse the arguments."""
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--bragfile",
-        "-b",
-        type=str,
-        help="The brag file to use",
-        default=None,
-    )
-    parser.add_argument(
-        "--create-config",
-        "-C",
-        action="store_true",
-        help="Create the config file",
-    )
-    parser.add_argument(
-        "--auto-send",
-        "-a",
-        action="store_true",
-        help="Automatically send the brag",
-    )
-    parser.add_argument(
-        "--config",
-        "-c",
-        type=str,
-        default=DEFAULT_CONFIG_FILE,
-        help="The config file to use",
-    )
-    return parser.parse_args(args)
-
-
-def get_input(prompt: str) -> str:
-    """Get input from the user."""
-    return input(prompt)
-
-
 def create_config(config_file: str) -> None:
     """Create the config file."""
     # Avoid overwriting existing config
@@ -318,29 +281,3 @@ def create_config(config_file: str) -> None:
     config.read_dict({"DEFAULT": dataclasses.asdict(Config())})
     with open(config_file, "w") as file:
         config.write(file)
-
-
-def main(_args: list[str] | None = None) -> int:
-    """Run the program."""
-    args = parse_args(_args)
-
-    if args.create_config:
-        create_config(f"{DEFAULT_CONFIG_FILE}.ini")
-        return 0
-
-    config = load_config(args.config)
-    filename = args.bragfile or get_filename(config)
-
-    open_editor(config, filename)
-
-    if not args.auto_send and get_input("Send brag? [y/N] ").lower() != "y":
-        return 0
-
-    content = read_file(filename)
-    send_message(config, content)
-
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

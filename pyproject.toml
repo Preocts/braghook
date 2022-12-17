@@ -43,7 +43,7 @@ test = [
 homepage = "https://github.com/Preocts/braghook"
 
 [project.scripts]
-braghook = "braghook.braghook:main"
+braghook = "braghook.cli:main"
 
 [tool.setuptools.package-data]
 "braghook" = ["py.typed"]
