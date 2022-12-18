@@ -36,22 +36,28 @@ def test_main() -> None:
             with patch("braghook.braghook.read_file") as mock_read_file:
                 with patch("braghook.braghook.send_message") as mock_send_message:
                     with patch("braghook.cli.get_input") as mock_get_input:
-                        mock_get_input.return_value = "y"
+                        with patch(
+                            "braghook.braghook.post_brag_to_gist"
+                        ) as mock_post_brag:
+                            mock_get_input.return_value = "y"
 
-                        cli.main(
-                            [
-                                "--config",
-                                "tests/braghook.ini",
-                                "--bragfile",
-                                "tests/brag.md",
-                            ]
-                        )
+                            cli.main(
+                                [
+                                    "--config",
+                                    "tests/braghook.ini",
+                                    "--bragfile",
+                                    "tests/brag.md",
+                                ]
+                            )
 
-                        mock_load_config.assert_called_once_with("tests/braghook.ini")
-                        mock_open_editor.assert_called_once()
-                        mock_read_file.assert_called_once()
-                        mock_send_message.assert_called_once()
-                        mock_get_input.assert_called_once()
+                            mock_load_config.assert_called_once_with(
+                                "tests/braghook.ini"
+                            )
+                            mock_open_editor.assert_called_once()
+                            mock_read_file.assert_called_once()
+                            mock_send_message.assert_called_once()
+                            mock_get_input.assert_called_once()
+                            mock_post_brag.assert_called_once()
 
 
 def test_main_no_send() -> None:
