@@ -1,3 +1,10 @@
+"""
+Webhook builder.
+
+This module contains the functions to build the webhook message.
+
+Update the BUILDERS dictionary to add new webhook builders.
+"""
 from __future__ import annotations
 
 import logging
@@ -174,6 +181,8 @@ def build_msteams_webhook(
 
 
 # Define the builders here, used in the main script
+# NOTE: The key is the config field that defines the url
+# NOTE: The value is the function that builds the message
 BUILDERS: dict[str, Builder] = {
     "discord_webhook": build_discord_webhook,
     "discord_webhook_plain": build_discord_webhook_plain,

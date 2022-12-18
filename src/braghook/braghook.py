@@ -57,11 +57,10 @@ def read_file(filename: str) -> str:
 
 def send_message(config: Config, content: str) -> None:
     """Send the message to any webhooks defined in config."""
-
-    for config_label, builder in webhook_builder.BUILDERS.items():
-        url = getattr(config, config_label)
+    for config_field, builder in webhook_builder.BUILDERS.items():
+        url = getattr(config, config_field)
         if not url:
-            continue
+            continue  # Skip if the webhook is not defined in config
         data = builder(
             author=config.author,
             author_icon=config.author_icon,
