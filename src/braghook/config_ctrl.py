@@ -21,8 +21,9 @@ class Config:
     msteams_webhook: str = ""
 
 
-def load_config(config_file: str) -> Config:
-    """Load the configuration."""
+def load_config(config_file: str | None = None) -> Config:
+    """Load the configuration. If no config file is given, the default is used."""
+    config_file = config_file or DEFAULT_CONFIG_FILE
     config = ConfigParser()
     config.read(config_file)
     default = config["DEFAULT"]
@@ -39,8 +40,9 @@ def load_config(config_file: str) -> Config:
     )
 
 
-def create_config(config_file: str) -> None:
-    """Create the config file."""
+def create_config(config_file: str | None = None) -> None:
+    """Create the config file. If no config file is given, the default is used."""
+    config_file = config_file or DEFAULT_CONFIG_FILE
     # Avoid overwriting existing config
     if Path(config_file).exists():
         print(f"Config file already exists: {config_file}")

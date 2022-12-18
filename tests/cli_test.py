@@ -3,7 +3,6 @@ from __future__ import annotations
 from unittest.mock import patch
 
 from braghook import cli
-from braghook.config_ctrl import DEFAULT_CONFIG_FILE
 
 
 def test_get_input() -> None:
@@ -97,9 +96,7 @@ def test_main_create_config() -> None:
                                 ]
                             )
 
-                            mock_create_config.assert_called_once_with(
-                                f"{DEFAULT_CONFIG_FILE}.ini"
-                            )
+                            mock_create_config.assert_called_once()
                             mock_load_config.assert_not_called()
                             mock_open_editor.assert_not_called()
                             mock_read_file.assert_not_called()

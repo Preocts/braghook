@@ -48,7 +48,7 @@ def main(_args: list[str] | None = None) -> int:
     args = parse_args(_args)
 
     if args.create_config:
-        config_ctrl.create_config(f"{config_ctrl.DEFAULT_CONFIG_FILE}.ini")
+        config_ctrl.create_config()
         return 0
 
     config = config_ctrl.load_config(args.config)
