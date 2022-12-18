@@ -1,3 +1,6 @@
+"""
+BragHook.
+"""
 from __future__ import annotations
 
 import http.client
@@ -88,3 +91,29 @@ def post_message(
     response = conn.getresponse()
     if response.status not in range(200, 300):
         logger.error("Error sending message: %s", response.read())
+
+
+def post_brag_to_gist(config: Config, filename: str, content: str) -> None:
+    """Post the brag to a GitHub gist."""
+    # Remove http(s):// from the url
+    url = config.github_url.replace("http://", "").replace("https://", "")
+
+    if not config.github_user or not config.github_pat or not config.gist_id:
+        return
+
+    conn = http.client.HTTPSConnection(url)
+    headers = {
+        "accept": "application/vnd.github.v3+json",
+        "user-agent": config.github_user,
+        "authorization": f"token {config.github_pat}",
+    }
+
+    data = {
+        "description": f"Brag posted: {datetime.now().strftime('%Y-%m-%d')}",
+        "files": {filename: {"content": content}},
+    }
+
+    conn.request("PATCH", f"/gists/{config.gist_id}", json.dumps(data), headers)
+    response = conn.getresponse()
+    if response.status not in range(200, 300):
+        logger.error("Error sending gist: %s", response.read())

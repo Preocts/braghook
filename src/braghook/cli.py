@@ -61,6 +61,7 @@ def main(_args: list[str] | None = None) -> int:
 
     content = braghook.read_file(filename)
     braghook.send_message(config, content)
+    braghook.post_brag_to_gist(config, filename, content)
 
     return 0
 

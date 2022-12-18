@@ -7,19 +7,34 @@
 
 # braghook
 
-Recording daily achievements and posting them via webhooks.
+Recording daily achievements and posting them places. Running `braghook` will
+open a file in the editor of choice for the current day. Once completed you will
+be prompted to send the brag to the configuration file defined targets.
 
+Supports:
+
+- Discord (embed or code-block)
+- Microsoft Teams
+- GitHub Gist (appends new file to secret gist)
 
 ### Installation:
+
+From repo:
 
 ```bash
 python -m pip install .
 ```
 
+From GitHub:
+
+```bash
+pip install braghook @ git+https://github.com/Preocts/braghook@main
+```
+
 ### Usage:
 
 ```console
-usage: braghook [-h] [--bragfile BRAGFILE] [--create-config] [--auto-send] [--config CONFIG] [--env ENV]
+usage: braghook [-h] [--bragfile BRAGFILE] [--create-config] [--auto-send] [--config CONFIG]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -29,7 +44,6 @@ optional arguments:
   --auto-send, -a       Automatically send the brag
   --config CONFIG, -c CONFIG
                         The config file to use
-  --env ENV, -e ENV     The env file to use
   ```
 
 ### Config file:
@@ -39,29 +53,33 @@ optional arguments:
 workdir = .
 editor = vim
 editor_args =
-  --optional
-  values
 author = yourname
-author_icon = https://
-discord_webhook = https://
-discord_webhook_plain = https://
+author_icon =
+discord_webhook =
+discord_webhook_plain =
+msteams_webhook =
+github_url = https://api.github.com
+github_user =
+github_pat =
+gist_id =
 ```
 
-| field                 | value                                              | required |
-| --------------------- | -------------------------------------------------- | -------- |
-| workdir               | Target path for new brag files                     | yes      |
-| editor                | Which editor to open                               | yes      |
-| editor_args           | Multiline of optional editor arguments             | no       |
-| author                | Your name, used in webhook posts, where applicable | no       |
-| authorh_icon          | URL to icon for webhook, where applicable          | no       |
-| discord_webhook       | URL of discord webhook - formatted as embed        | no       |
-| discord_webhook_plain | URL of discord webhook - posted as code-block      | no       |
+| field                 | value                                                        | required |
+| --------------------- | ------------------------------------------------------------ | -------- |
+| workdir               | Target path for new brag files                               | yes      |
+| editor                | Which editor to open                                         | yes      |
+| editor_args           | Multiline of optional editor arguments                       | no       |
+| author                | Your name, used in webhook posts, where applicable           | no       |
+| authorh_icon          | URL to icon for webhook, where applicable                    | no       |
+| discord_webhook       | URL of discord webhook - formatted as embed                  | no       |
+| discord_webhook_plain | URL of discord webhook - posted as code-block                | no       |
+| msteams_webhook       | URL of msteams webhook connector                             | no       |
+| github_url            | URL to GitHub API (default: https://api.github.com)          | no       |
+| github_user           | GitHub user name                                             | no       |
+| github_pat            | GitHub personal access token with Gist read/write permission | no       |
+| gist_id               | Gist ID to add brag file to                                  | no       |
 
----
-
-### Example Discord hooks:
-
-![discord_hooks.png](images/discord_hooks.png)
+**note:** `github_user`, `github_pat`, and `gist_id` are all jointly required if used
 
 ---
 

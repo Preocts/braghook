@@ -19,6 +19,10 @@ class Config:
     discord_webhook: str = ""
     discord_webhook_plain: str = ""
     msteams_webhook: str = ""
+    github_url: str = "https://api.github.com"
+    github_user: str = ""
+    github_pat: str = ""
+    gist_id: str = ""
 
 
 def load_config(config_file: str | None = None) -> Config:
@@ -37,6 +41,9 @@ def load_config(config_file: str | None = None) -> Config:
         discord_webhook=default.get("discord_webhook", fallback=""),
         discord_webhook_plain=default.get("discord_webhook_plain", fallback=""),
         msteams_webhook=default.get("msteams_webhook", fallback=""),
+        github_user=default.get("github_user", fallback=""),
+        github_pat=default.get("github_pat", fallback=""),
+        gist_id=default.get("gist_id", fallback=""),
     )
 
 

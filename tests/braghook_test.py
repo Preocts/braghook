@@ -105,3 +105,34 @@ def test_send_message() -> None:
         braghook.send_message(config, message)
 
         mock_post_message.assert_called_once()
+
+
+def test_post_brag_to_gist() -> None:
+    date = datetime.now().strftime("%Y-%m-%d")
+    config = Config(
+        github_user="test_user",
+        github_pat="test_pat",
+        gist_id="test_gist_id",
+    )
+    message = "Test message"
+
+    with patch("http.client.HTTPSConnection") as mock_connection:
+        mock_connection.return_value.getresponse.return_value.status = 200
+        braghook.post_brag_to_gist(config, "bragging-rights.md", message)
+
+        mock_connection.assert_called_once_with("api.github.com")
+        mock_connection.return_value.request.assert_called_once_with(
+            "PATCH",
+            "/gists/test_gist_id",
+            json.dumps(
+                {
+                    "description": f"Brag posted: {date}",
+                    "files": {"bragging-rights.md": {"content": message}},
+                }
+            ),
+            {
+                "accept": "application/vnd.github.v3+json",
+                "user-agent": "test_user",
+                "authorization": "token test_pat",
+            },
+        )
