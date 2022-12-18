@@ -97,47 +97,11 @@ def test_post_message_failed(caplog: pytest.LogCaptureFixture) -> None:
         assert "Error sending message:" in caplog.text
 
 
-def test_send_message_discord() -> None:
-    config = Config(
-        discord_webhook="https://discord.com/api/webhooks/1234567890/abcdefg"
-    )
+def test_send_message() -> None:
+    config = Config(discord_webhook="https://discord.com/api/webhooks/1234567890/abc")
     message = "Test message"
 
     with patch("braghook.braghook.post_message") as mock_post_message:
         braghook.send_message(config, message)
 
         mock_post_message.assert_called_once()
-
-
-def test_send_message_discord_plain() -> None:
-    config = Config(
-        discord_webhook_plain="https://discord.com/api/webhooks/1234567890/abcdefg"
-    )
-    message = "Test message"
-
-    with patch("braghook.braghook.post_message") as mock_post_message:
-        braghook.send_message(config, message)
-
-        mock_post_message.assert_called_once()
-
-
-def test_send_message_msteams() -> None:
-    config = Config(
-        msteams_webhook="https://outlook.office.com/webhook/1234567890/abcdefg"
-    )
-    message = "Test message"
-
-    with patch("braghook.braghook.post_message") as mock_post_message:
-        braghook.send_message(config, message)
-
-        mock_post_message.assert_called_once()
-
-
-def test_send_message_no_hooks() -> None:
-    config = Config()
-    message = "Test message"
-
-    with patch("http.client.HTTPSConnection") as mock_connection:
-        braghook.send_message(config, message)
-
-        mock_connection.assert_not_called()

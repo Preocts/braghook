@@ -1,10 +1,33 @@
+"""
+Webhook builder.
+
+This module contains the functions to build the webhook message.
+
+Update the BUILDERS dictionary to add new webhook builders.
+"""
 from __future__ import annotations
 
 import logging
 import re
 from typing import Any
+from typing import TYPE_CHECKING
 
 logger = logging.getLogger(__name__)
+
+
+if TYPE_CHECKING:
+    from typing import Protocol
+
+    class Builder(Protocol):
+        """Protocol for the message builder."""
+
+        def __call__(
+            self,
+            author: str,
+            author_icon: str,
+            content: str,
+        ) -> dict[str, Any]:
+            ...
 
 
 def extract_title_from_message(message: str) -> str:
@@ -29,9 +52,12 @@ def headers_to_bold(message: str) -> str:
 
 
 def build_discord_webhook_plain(
+    author: str,
+    author_icon: str,
     content: str,
 ) -> dict[str, Any]:
     """Build the Discord webhook."""
+    content = f"{author} ({author_icon})\n{content}"
     return {"username": "braghook", "content": f"```{content}```"}
 
 
@@ -152,3 +178,13 @@ def build_msteams_webhook(
             }
         ],
     }
+
+
+# Define the builders here, used in the main script
+# NOTE: The key is the config field that defines the url
+# NOTE: The value is the function that builds the message
+BUILDERS: dict[str, Builder] = {
+    "discord_webhook": build_discord_webhook,
+    "discord_webhook_plain": build_discord_webhook_plain,
+    "msteams_webhook": build_msteams_webhook,
+}
