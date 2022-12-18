@@ -101,7 +101,7 @@ def post_brag_to_gist(config: Config, filename: str, content: str) -> None:
     conn = http.client.HTTPSConnection("api.github.com")
     headers = {
         "accept": "application/vnd.github.v3+json",
-        "user_name": config.github_user,
+        "user-agent": config.github_user,
         "authorization": f"token {config.github_pat}",
     }
 

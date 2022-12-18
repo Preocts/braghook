@@ -132,7 +132,7 @@ def test_post_brag_to_gist() -> None:
             ),
             {
                 "accept": "application/vnd.github.v3+json",
-                "user_name": "test_user",
+                "user-agent": "test_user",
                 "authorization": "token test_pat",
             },
         )
