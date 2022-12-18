@@ -36,11 +36,13 @@ def test_bullet_markes_to_diamonds(message: str, expected_message: str) -> None:
         ("## Test message", "**Test message**"),
         ("### Test message", "**Test message**"),
         ("#### Test message", "**Test message**"),
-        ("##### Test message", "Test message"),  # more than four are not headers
+        ("##### Test message", "##### Test message"),  # more than four are not headers
     ],
 )
-def teset_headers_to_bold(message: str, expected_message: str) -> None:
-    assert webhook_builder.headers_to_bold(message) == expected_message
+def test_headers_to_bold(message: str, expected_message: str) -> None:
+    result = webhook_builder.headers_to_bold(message)
+
+    assert result == expected_message
 
 
 def test_build_discord_webhook() -> None:
@@ -58,9 +60,11 @@ def test_build_discord_webhook() -> None:
 def test_build_plain_discord_webhook() -> None:
     # Test the results of the webhook by sending it to a Discord channel
     # this just tests that nothing raises an exception
+    author = "Test Author"
+    author_icon = "https://example.com/icon.png"
     message = "Test message"
 
-    result = webhook_builder.build_discord_webhook_plain(message)
+    result = webhook_builder.build_discord_webhook_plain(author, author_icon, message)
 
     assert result
 

@@ -56,32 +56,18 @@ def read_file(filename: str) -> str:
 
 
 def send_message(config: Config, content: str) -> None:
-    """Send the message to defined webhooks in config."""
-    if config.discord_webhook != "":
-        post_message(
-            url=config.discord_webhook,
-            data=webhook_builder.build_discord_webhook(
-                author=config.author,
-                author_icon=config.author_icon,
-                content=content,
-            ),
-        )
+    """Send the message to any webhooks defined in config."""
 
-    if config.discord_webhook_plain != "":
-        post_message(
-            url=config.discord_webhook_plain,
-            data=webhook_builder.build_discord_webhook_plain(content),
+    for config_label, builder in webhook_builder.BUILDERS.items():
+        url = getattr(config, config_label)
+        if not url:
+            continue
+        data = builder(
+            author=config.author,
+            author_icon=config.author_icon,
+            content=content,
         )
-
-    if config.msteams_webhook != "":
-        post_message(
-            url=config.msteams_webhook,
-            data=webhook_builder.build_msteams_webhook(
-                author=config.author,
-                author_icon=config.author_icon,
-                content=content,
-            ),
-        )
+        post_message(url=url, data=data)
 
 
 def post_message(
