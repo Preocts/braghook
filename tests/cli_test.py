@@ -3,7 +3,6 @@ from __future__ import annotations
 from unittest.mock import patch
 
 from braghook import cli
-from braghook.braghook import DEFAULT_CONFIG_FILE
 
 
 def test_get_input() -> None:
@@ -32,7 +31,7 @@ def test_parse_args() -> None:
 
 
 def test_main() -> None:
-    with patch("braghook.braghook.load_config") as mock_load_config:
+    with patch("braghook.config_ctrl.load_config") as mock_load_config:
         with patch("braghook.braghook.open_editor") as mock_open_editor:
             with patch("braghook.braghook.read_file") as mock_read_file:
                 with patch("braghook.braghook.send_message") as mock_send_message:
@@ -56,7 +55,7 @@ def test_main() -> None:
 
 
 def test_main_no_send() -> None:
-    with patch("braghook.braghook.load_config") as mock_load_config:
+    with patch("braghook.config_ctrl.load_config") as mock_load_config:
         with patch("braghook.braghook.open_editor") as mock_open_editor:
             with patch("braghook.braghook.read_file") as mock_read_file:
                 with patch("braghook.braghook.send_message") as mock_send_message:
@@ -79,8 +78,8 @@ def test_main_no_send() -> None:
 
 
 def test_main_create_config() -> None:
-    with patch("braghook.braghook.create_config") as mock_create_config:
-        with patch("braghook.braghook.load_config") as mock_load_config:
+    with patch("braghook.config_ctrl.create_config") as mock_create_config:
+        with patch("braghook.config_ctrl.load_config") as mock_load_config:
             with patch("braghook.braghook.open_editor") as mock_open_editor:
                 with patch("braghook.braghook.read_file") as mock_read_file:
                     with patch("braghook.braghook.send_message") as mock_send_message:
@@ -97,9 +96,7 @@ def test_main_create_config() -> None:
                                 ]
                             )
 
-                            mock_create_config.assert_called_once_with(
-                                f"{DEFAULT_CONFIG_FILE}.ini"
-                            )
+                            mock_create_config.assert_called_once()
                             mock_load_config.assert_not_called()
                             mock_open_editor.assert_not_called()
                             mock_read_file.assert_not_called()

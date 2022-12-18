@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 
 from braghook import braghook
-from braghook.braghook import DEFAULT_CONFIG_FILE
+from braghook import config_ctrl
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:
@@ -32,7 +32,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         "--config",
         "-c",
         type=str,
-        default=DEFAULT_CONFIG_FILE,
+        default=config_ctrl.DEFAULT_CONFIG_FILE,
         help="The config file to use",
     )
     return parser.parse_args(args)
@@ -48,10 +48,10 @@ def main(_args: list[str] | None = None) -> int:
     args = parse_args(_args)
 
     if args.create_config:
-        braghook.create_config(f"{DEFAULT_CONFIG_FILE}.ini")
+        config_ctrl.create_config()
         return 0
 
-    config = braghook.load_config(args.config)
+    config = config_ctrl.load_config(args.config)
     filename = args.bragfile or braghook.get_filename(config)
 
     braghook.open_editor(config, filename)

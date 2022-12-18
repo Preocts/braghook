@@ -1,17 +1,18 @@
 from __future__ import annotations
 
-import dataclasses
 import http.client
 import json
 import logging
 import re
 import subprocess
-from configparser import ConfigParser
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from typing import TYPE_CHECKING
 
-DEFAULT_CONFIG_FILE = "braghook.ini"
+if TYPE_CHECKING:
+    from braghook.config_ctrl import Config
+
 DEFAULT_FILE_TEMPLATE = """### {date} [Optional: Add a title here]
 
 Write your brag here. Summarize what you did today, what you learned,
@@ -22,38 +23,6 @@ Write your brag here. Summarize what you did today, what you learned,
 """
 
 logger = logging.getLogger(__name__)
-
-
-@dataclasses.dataclass(frozen=True)
-class Config:
-    """Dataclass for the configuration."""
-
-    workdir: str = "."
-    editor: str = "vim"
-    editor_args: str = ""
-    author: str = "braghook"
-    author_icon: str = ""
-    discord_webhook: str = ""
-    discord_webhook_plain: str = ""
-    msteams_webhook: str = ""
-
-
-def load_config(config_file: str) -> Config:
-    """Load the configuration."""
-    config = ConfigParser()
-    config.read(config_file)
-    default = config["DEFAULT"]
-
-    return Config(
-        workdir=default.get("workdir", fallback="."),
-        editor=default.get("editor", fallback="vim"),
-        editor_args=default.get("editor_args", fallback=""),
-        author=default.get("author", fallback="braghook"),
-        author_icon=default.get("author_icon", fallback=""),
-        discord_webhook=default.get("discord_webhook", fallback=""),
-        discord_webhook_plain=default.get("discord_webhook_plain", fallback=""),
-        msteams_webhook=default.get("msteams_webhook", fallback=""),
-    )
 
 
 def open_editor(config: Config, filename: str) -> None:
@@ -268,16 +237,3 @@ def send_message(config: Config, content: str) -> None:
                 content=content,
             ),
         )
-
-
-def create_config(config_file: str) -> None:
-    """Create the config file."""
-    # Avoid overwriting existing config
-    if Path(config_file).exists():
-        print(f"Config file already exists: {config_file}")
-        return
-
-    config = ConfigParser()
-    config.read_dict({"DEFAULT": dataclasses.asdict(Config())})
-    with open(config_file, "w") as file:
-        config.write(file)
