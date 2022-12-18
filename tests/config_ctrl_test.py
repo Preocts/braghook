@@ -21,6 +21,9 @@ def test_load_config() -> None:
     assert config.discord_webhook == ""
     assert config.discord_webhook_plain == ""
     assert config.msteams_webhook == ""
+    assert config.github_user == ""
+    assert config.github_pat == ""
+    assert config.gist_id == ""
 
 
 def test_create_config_with_tempfile() -> None:
