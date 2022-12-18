@@ -95,10 +95,13 @@ def post_message(
 
 def post_brag_to_gist(config: Config, filename: str, content: str) -> None:
     """Post the brag to a GitHub gist."""
+    # Remove http(s):// from the url
+    url = config.github_url.replace("http://", "").replace("https://", "")
+
     if not config.github_user or not config.github_pat or not config.gist_id:
         return
 
-    conn = http.client.HTTPSConnection("api.github.com")
+    conn = http.client.HTTPSConnection(url)
     headers = {
         "accept": "application/vnd.github.v3+json",
         "user-agent": config.github_user,
