@@ -3,30 +3,15 @@ from __future__ import annotations
 import json
 import os
 import tempfile
-from configparser import ConfigParser
-from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 from braghook import braghook
-from braghook.braghook import Config
+from braghook.config_ctrl import Config
 
 MOCKFILE_CONTENTS = "# Bragging rights"
-
-
-def test_load_config() -> None:
-    config = braghook.load_config("tests/braghook.ini")
-
-    assert config.workdir == "."
-    assert config.editor == "vim"
-    assert config.editor_args == ""
-    assert config.author == "braghook"
-    assert config.author_icon == ""
-    assert config.discord_webhook == ""
-    assert config.discord_webhook_plain == ""
-    assert config.msteams_webhook == ""
 
 
 def test_get_filename() -> None:
@@ -161,40 +146,6 @@ def test_send_message_no_hooks() -> None:
         braghook.send_message(config, message)
 
         mock_connection.assert_not_called()
-
-
-def test_create_config_with_tempfile() -> None:
-    expected_config = ConfigParser()
-    expected_config.read_dict({"DEFAULT": asdict(Config())})
-
-    with tempfile.NamedTemporaryFile(mode="w", delete=False) as file:
-        ...
-    os.remove(file.name)
-
-    braghook.create_config(file.name)
-
-    try:
-        actual_config = ConfigParser()
-        actual_config.read(file.name)
-
-        assert actual_config == expected_config
-
-    finally:
-        os.remove(file.name)
-
-
-def test_create_config_does_not_overwrite() -> None:
-    with tempfile.NamedTemporaryFile(mode="w", delete=False) as file:
-        file.write("[braghook]\n")
-
-    try:
-        with patch("braghook.braghook.ConfigParser.write") as mock_write:
-            braghook.create_config(file.name)
-
-        mock_write.assert_not_called()
-
-    finally:
-        os.remove(file.name)
 
 
 def test_extract_title_from_message() -> None:
