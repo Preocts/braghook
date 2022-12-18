@@ -16,6 +16,33 @@ def test_extract_title_from_message(message: str, expected_title: str) -> None:
     assert webhook_builder.extract_title_from_message(message) == expected_title
 
 
+@pytest.mark.parametrize(
+    "message, expected_message",
+    [
+        ("Test message", "Test message"),
+        ("## Test message", "## Test message"),
+        ("- Test message", ":small_blue_diamond: Test message"),
+        ("  - Test message", ":small_orange_diamond: Test message"),
+    ],
+)
+def test_bullet_markes_to_diamonds(message: str, expected_message: str) -> None:
+    assert webhook_builder.bullet_marks_to_diamonds(message) == expected_message
+
+
+@pytest.mark.parametrize(
+    "message, expected_message",
+    [
+        ("Test message", "Test message"),
+        ("## Test message", "**Test message**"),
+        ("### Test message", "**Test message**"),
+        ("#### Test message", "**Test message**"),
+        ("##### Test message", "Test message"),  # more than four are not headers
+    ],
+)
+def teset_headers_to_bold(message: str, expected_message: str) -> None:
+    assert webhook_builder.headers_to_bold(message) == expected_message
+
+
 def test_build_discord_webhook() -> None:
     # Test the results of the webhook by sending it to a Discord channel
     # this just tests that nothing raises an exception

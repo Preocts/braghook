@@ -13,6 +13,21 @@ def extract_title_from_message(message: str) -> str:
     return match.group(1).strip() if match else ""
 
 
+def bullet_marks_to_diamonds(message: str) -> str:
+    """Convert bullet marks to diamonds."""
+    message = re.sub(r"^[-*]\s?", r":small_blue_diamond: ", message, flags=re.MULTILINE)
+    message = re.sub(
+        r"^(\s*)[-*]\s?", r":small_orange_diamond: ", message, flags=re.MULTILINE
+    )
+    return message
+
+
+def headers_to_bold(message: str) -> str:
+    """Convert headers to bold."""
+    message = re.sub(r"^#{1,4}\s(.+)$", r"**\1**", message, flags=re.MULTILINE)
+    return message
+
+
 def build_discord_webhook_plain(
     content: str,
 ) -> dict[str, Any]:
@@ -27,11 +42,8 @@ def build_discord_webhook(
 ) -> dict[str, Any]:
     """Build the Discord webhook."""
     title = extract_title_from_message(content)
-    content = re.sub(r"^[-*]\s?", r":small_blue_diamond: ", content, flags=re.MULTILINE)
-    content = re.sub(
-        r"^(\s*)[-*]\s?", r":small_orange_diamond: ", content, flags=re.MULTILINE
-    )
-    content = re.sub(r"^#{1,4}\s(.+)$", r"**\1**", content, flags=re.MULTILINE)
+    content = bullet_marks_to_diamonds(content)
+    content = headers_to_bold(content)
 
     return {
         "username": "braghook",
@@ -56,7 +68,7 @@ def build_msteams_webhook(
 ) -> dict[str, Any]:
     """Build the MSTeams webhook."""
     title = extract_title_from_message(content)
-    content = re.sub(r"^#{1,4}\s(.+)$", r"**\1**", content, flags=re.MULTILINE)
+    content = headers_to_bold(content)
     return {
         "type": "message",
         "attachments": [
