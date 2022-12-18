@@ -102,12 +102,11 @@ def test_send_message_discord() -> None:
         discord_webhook="https://discord.com/api/webhooks/1234567890/abcdefg"
     )
     message = "Test message"
-    data = braghook.build_discord_webhook(config.author, config.author_icon, message)
 
     with patch("braghook.braghook.post_message") as mock_post_message:
         braghook.send_message(config, message)
 
-        mock_post_message.assert_called_once_with(url=config.discord_webhook, data=data)
+        mock_post_message.assert_called_once()
 
 
 def test_send_message_discord_plain() -> None:
@@ -115,14 +114,11 @@ def test_send_message_discord_plain() -> None:
         discord_webhook_plain="https://discord.com/api/webhooks/1234567890/abcdefg"
     )
     message = "Test message"
-    data = braghook.build_discord_webhook_plain(message)
 
     with patch("braghook.braghook.post_message") as mock_post_message:
         braghook.send_message(config, message)
 
-        mock_post_message.assert_called_once_with(
-            url=config.discord_webhook_plain, data=data
-        )
+        mock_post_message.assert_called_once()
 
 
 def test_send_message_msteams() -> None:
@@ -130,12 +126,11 @@ def test_send_message_msteams() -> None:
         msteams_webhook="https://outlook.office.com/webhook/1234567890/abcdefg"
     )
     message = "Test message"
-    data = braghook.build_msteams_webhook(config.author, config.author_icon, message)
 
     with patch("braghook.braghook.post_message") as mock_post_message:
         braghook.send_message(config, message)
 
-        mock_post_message.assert_called_once_with(url=config.msteams_webhook, data=data)
+        mock_post_message.assert_called_once()
 
 
 def test_send_message_no_hooks() -> None:
@@ -146,10 +141,3 @@ def test_send_message_no_hooks() -> None:
         braghook.send_message(config, message)
 
         mock_connection.assert_not_called()
-
-
-def test_extract_title_from_message() -> None:
-    message = "## Test message \n Test message body"
-    expected_title = "Test message"
-
-    assert braghook.extract_title_from_message(message) == expected_title
