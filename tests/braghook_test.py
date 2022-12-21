@@ -194,6 +194,34 @@ def test_post_brag_to_gist() -> None:
         )
 
 
+def test_post_brag_to_gist_failure(caplog: pytest.LogCaptureFixture) -> None:
+    config = braghook.Config(
+        github_user="test_user",
+        github_pat="test_pat",
+        gist_id="test_gist_id",
+    )
+
+    with patch("http.client.HTTPSConnection") as mock_connection:
+        mock_connection.return_value.getresponse.return_value.status = 403
+        braghook.post_brag_to_gist(config, "bragging-rights.md", "message")
+
+        mock_connection.assert_called_once_with("api.github.com")
+        assert "Error sending gist:" in caplog.text
+
+
+def test_post_brag_tol_gist_no_pat() -> None:
+    config = braghook.Config(
+        github_user="test_user",
+        github_pat="",
+        gist_id="test_gist_id",
+    )
+
+    with patch("http.client.HTTPSConnection") as mock_connection:
+        braghook.post_brag_to_gist(config, "bragging-rights.md", "message")
+
+        mock_connection.assert_not_called()
+
+
 @pytest.mark.parametrize(
     "message, expected_title",
     [
