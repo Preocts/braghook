@@ -47,8 +47,8 @@ def create_file(filename: str) -> None:
         )
 
 
-def get_filename(config: Config) -> str:
-    """Get the filename."""
+def create_filename(config: Config) -> str:
+    """Create the filename using the current date."""
     return str(Path(config.workdir) / datetime.now().strftime("brag-%Y-%m-%d.md"))
 
 

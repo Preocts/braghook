@@ -14,12 +14,12 @@ from braghook.config_ctrl import Config
 MOCKFILE_CONTENTS = "# Bragging rights"
 
 
-def test_get_filename() -> None:
+def test_create_filename() -> None:
     config = Config()
     # Fun fact, this can fail if you run it at midnight
     filename = Path(config.workdir) / datetime.now().strftime("brag-%Y-%m-%d.md")
 
-    assert braghook.get_filename(config) == str(filename)
+    assert braghook.create_filename(config) == str(filename)
 
 
 def test_open_editor_file_exists() -> None:

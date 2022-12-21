@@ -52,7 +52,7 @@ def main(_args: list[str] | None = None) -> int:
         return 0
 
     config = config_ctrl.load_config(args.config)
-    filename = args.bragfile or braghook.get_filename(config)
+    filename = args.bragfile or braghook.create_filename(config)
 
     braghook.open_editor(config, filename)
 
