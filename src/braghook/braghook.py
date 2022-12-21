@@ -17,7 +17,7 @@ from braghook import webhook_builder
 if TYPE_CHECKING:
     from braghook.config_ctrl import Config
 
-DEFAULT_FILE_TEMPLATE = """### {date} [Optional: Add a title here]
+DEFAULT_FILE_TEMPLATE = """### {date}
 
 Write your brag here. Summarize what you did today, what you learned,
  and what you plan to do tomorrow.
@@ -32,14 +32,14 @@ logger = logging.getLogger(__name__)
 def open_editor(config: Config, filename: str) -> None:
     """Open the editor."""
     if not Path(filename).exists():
-        create_file(filename)
+        create_empty_template_file(filename)
     args = config.editor_args.split()
 
     args.append(str(filename))
     subprocess.run([config.editor, *args])
 
 
-def create_file(filename: str) -> None:
+def create_empty_template_file(filename: str) -> None:
     """Create the file."""
     with open(filename, "w") as file:
         file.write(

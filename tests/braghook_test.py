@@ -26,7 +26,9 @@ def test_open_editor_file_exists() -> None:
     config = Config(editor_args="--test_flag")
     with tempfile.NamedTemporaryFile(mode="w") as file:
         with patch("subprocess.run") as mock_run:
-            with patch("braghook.braghook.create_file") as mock_create_file:
+            with patch(
+                "braghook.braghook.create_empty_template_file"
+            ) as mock_create_file:
                 braghook.open_editor(config, file.name)
 
                 mock_run.assert_called_once_with(["vim", "--test_flag", str(file.name)])
@@ -38,7 +40,7 @@ def test_open_editor_file_does_not_exist() -> None:
     filename = "tests/test-brag.md"
 
     with patch("subprocess.run") as mock_run:
-        with patch("braghook.braghook.create_file") as mock_create_file:
+        with patch("braghook.braghook.create_empty_template_file") as mock_create_file:
             braghook.open_editor(config, filename)
 
             mock_create_file.assert_called_once_with(filename)
@@ -56,11 +58,11 @@ def test_read_file() -> None:
         os.remove(file.name)
 
 
-def test_create_file() -> None:
+def test_create_empty_template_file() -> None:
     filename = "tests/test-brag.md"
 
     try:
-        braghook.create_file(filename)
+        braghook.create_empty_template_file(filename)
 
         assert Path(filename).is_file()
 
