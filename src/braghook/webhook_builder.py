@@ -142,7 +142,7 @@ def build_msteams_webhook(
                                         },
                                         {
                                             "type": "TextBlock",
-                                            "text": "Daily Brag",
+                                            "text": "sent by: braghook",
                                             "spacing": "none",
                                             "isSubtle": True,
                                             "wrap": True,
