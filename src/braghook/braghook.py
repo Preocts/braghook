@@ -52,7 +52,7 @@ def create_filename(config: Config) -> str:
     return str(Path(config.workdir) / datetime.now().strftime("brag-%Y-%m-%d.md"))
 
 
-def read_file(filename: str) -> str:
+def read_file_contents(filename: str) -> str:
     """Read the file."""
     with open(filename) as file:
         return file.read()

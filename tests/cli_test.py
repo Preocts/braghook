@@ -33,7 +33,7 @@ def test_parse_args() -> None:
 def test_main() -> None:
     with patch("braghook.config_ctrl.load_config") as mock_load_config:
         with patch("braghook.braghook.open_editor") as mock_open_editor:
-            with patch("braghook.braghook.read_file") as mock_read_file:
+            with patch("braghook.braghook.read_file_contents") as mock_read_file:
                 with patch("braghook.braghook.send_message") as mock_send_message:
                     with patch("braghook.cli.get_input") as mock_get_input:
                         with patch(
@@ -63,7 +63,7 @@ def test_main() -> None:
 def test_main_no_send() -> None:
     with patch("braghook.config_ctrl.load_config") as mock_load_config:
         with patch("braghook.braghook.open_editor") as mock_open_editor:
-            with patch("braghook.braghook.read_file") as mock_read_file:
+            with patch("braghook.braghook.read_file_contents") as mock_read_file:
                 with patch("braghook.braghook.send_message") as mock_send_message:
                     with patch("braghook.cli.get_input") as mock_get_input:
                         mock_get_input.return_value = "n"
@@ -87,7 +87,7 @@ def test_main_create_config() -> None:
     with patch("braghook.config_ctrl.create_config") as mock_create_config:
         with patch("braghook.config_ctrl.load_config") as mock_load_config:
             with patch("braghook.braghook.open_editor") as mock_open_editor:
-                with patch("braghook.braghook.read_file") as mock_read_file:
+                with patch("braghook.braghook.read_file_contents") as mock_read_file:
                     with patch("braghook.braghook.send_message") as mock_send_message:
                         with patch("braghook.cli.get_input") as mock_get_input:
                             mock_get_input.return_value = "y"

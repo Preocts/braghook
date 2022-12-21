@@ -59,7 +59,7 @@ def main(_args: list[str] | None = None) -> int:
     if not args.auto_send and get_input("Send brag? [y/N] ").lower() != "y":
         return 0
 
-    content = braghook.read_file(filename)
+    content = braghook.read_file_contents(filename)
     braghook.send_message(config, content)
     braghook.post_brag_to_gist(config, filename, content)
 

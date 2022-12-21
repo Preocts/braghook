@@ -47,12 +47,12 @@ def test_open_editor_file_does_not_exist() -> None:
             mock_run.assert_called_once_with(["vim", "--test_flag", str(filename)])
 
 
-def test_read_file() -> None:
+def test_read_file_contents() -> None:
     try:
         with tempfile.NamedTemporaryFile(mode="w", delete=False) as file:
             file.write(MOCKFILE_CONTENTS)
 
-        assert braghook.read_file(file.name) == MOCKFILE_CONTENTS
+        assert braghook.read_file_contents(file.name) == MOCKFILE_CONTENTS
 
     finally:
         os.remove(file.name)
