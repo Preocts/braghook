@@ -19,7 +19,7 @@ class Config:
     discord_webhook: str = ""
     discord_webhook_plain: str = ""
     msteams_webhook: str = ""
-    github_url: str = "https://api.github.com"
+    github_api_url: str = "https://api.github.com"
     github_user: str = ""
     github_pat: str = ""
     gist_id: str = ""
