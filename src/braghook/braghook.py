@@ -142,6 +142,14 @@ def send_message(config: Config, content: str) -> None:
         post_message(url=url, data=data)
 
 
+def split_uri(uri: str) -> tuple[str, str]:
+    """Split the URI into host and path."""
+    uri = uri.replace("http://", "").replace("https://", "")
+    host = uri.split("/", 1)[0]
+    path = uri.replace(host, "")
+    return host, path
+
+
 def post_message(
     url: str,
     data: dict[str, Any],
@@ -149,15 +157,10 @@ def post_message(
 ) -> None:
     """Post the message to defined webhooks in config."""
     headers = headers or {"content-type": "application/json"}
+    host, path = split_uri(url)
 
-    # Remove http(s):// from the url
-    url = url.replace("http://", "").replace("https://", "")
-
-    # Split the url into host and path
-    url_parts = url.split("/", 1)
-
-    conn = http.client.HTTPSConnection(url_parts[0])
-    conn.request("POST", f"/{url_parts[1]}", json.dumps(data), headers)
+    conn = http.client.HTTPSConnection(host)
+    conn.request("POST", path, json.dumps(data), headers)
     response = conn.getresponse()
     if response.status not in range(200, 300):
         logger.error("Error sending message: %s", response.read())

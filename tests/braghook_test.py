@@ -163,6 +163,16 @@ def test_send_message() -> None:
         mock_post_message.assert_called_once()
 
 
+def test_split_uri() -> None:
+    uri = "https://discord.com/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz"
+    uri_no_path = "https://discord.com"
+    expected = ("discord.com", "/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz")
+    expected_no_path = ("discord.com", "")
+
+    assert braghook.split_uri(uri) == expected
+    assert braghook.split_uri(uri_no_path) == expected_no_path
+
+
 def test_post_brag_to_gist() -> None:
     date = datetime.now().strftime("%Y-%m-%d")
     config = braghook.Config(
