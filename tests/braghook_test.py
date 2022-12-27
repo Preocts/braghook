@@ -122,7 +122,7 @@ def test_create_empty_template_file() -> None:
         os.remove(filename)
 
 
-def test_post_message() -> None:
+def test__post() -> None:
     url = "https://discord.com/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz"
     message = {"message": "Test message"}
     expected_domain = "discord.com"
@@ -131,7 +131,7 @@ def test_post_message() -> None:
 
     with patch("http.client.HTTPSConnection") as mock_connection:
         mock_connection.return_value.getresponse.return_value.status = 204
-        braghook.post_message(url, message)
+        braghook._post(url, message)
 
         mock_connection.assert_called_once_with(expected_domain)
         mock_connection.return_value.request.assert_called_once_with(
@@ -139,14 +139,14 @@ def test_post_message() -> None:
         )
 
 
-def test_post_message_failed(caplog: pytest.LogCaptureFixture) -> None:
+def test__post_failed(caplog: pytest.LogCaptureFixture) -> None:
     url = "https://discord.com/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz"
     message = {"message": "Test message"}
 
     with patch("http.client.HTTPSConnection") as mock_connection:
         mock_connection.return_value.getresponse.return_value.status = 400
 
-        braghook.post_message(url, message)
+        braghook._post(url, message)
 
         assert "Error sending message:" in caplog.text
 
@@ -157,7 +157,7 @@ def test_send_message() -> None:
     )
     message = "Test message"
 
-    with patch("braghook.braghook.post_message") as mock_post_message:
+    with patch("braghook.braghook._post") as mock_post_message:
         braghook.send_message(config, message)
 
         mock_post_message.assert_called_once()

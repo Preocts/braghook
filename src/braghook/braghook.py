@@ -139,7 +139,7 @@ def send_message(config: Config, content: str) -> None:
             author_icon=config.author_icon,
             content=content,
         )
-        post_message(url=url, data=data)
+        _post(url=url, data=data)
 
 
 def split_uri(uri: str) -> tuple[str, str]:
@@ -150,12 +150,12 @@ def split_uri(uri: str) -> tuple[str, str]:
     return host, path
 
 
-def post_message(
+def _post(
     url: str,
     data: dict[str, Any],
     headers: dict[str, str] | None = None,
 ) -> None:
-    """Post the message to defined webhooks in config."""
+    """Post the data to the URL."""
     headers = headers or {"content-type": "application/json"}
     host, path = split_uri(url)
 
