@@ -39,6 +39,7 @@ Write your brag here. Summarize what you did today, what you learned,
 
 - Bullet specific things you did (meetings, tasks, etc.)
   - Nest details such as links to tasks, commits, or PRs
+
 """
 
 
@@ -187,12 +188,12 @@ def _get(
     return json.loads(response.read())
 
 
-def get_weather_string(config: Config) -> str:
+def get_weather_string(url: str) -> str:
     """Get the weather string. Uses provided OpenWeatherMap URL and API key."""
-    if not config.openweathermap_url:
+    if not url:
         return ""
 
-    data = _get(config.openweathermap_url)
+    data = _get(url)
 
     temp_min_c = f"min: {data['main']['temp_min'] - 273.15:.1f}°C"
     temp_max_c = f"max: {data['main']['temp_max'] - 273.15:.1f}°C"
@@ -200,7 +201,14 @@ def get_weather_string(config: Config) -> str:
     humidity = f"humidity: {data['main']['humidity']}%"
     pressure = f"pressure: {data['main']['pressure']}hPa"
 
-    return f"{temp_min_c}, {temp_max_c}, {temp_feels_like_c}, {humidity}, {pressure}"
+    return f"{temp_min_c}, {temp_max_c}, {temp_feels_like_c}, {humidity}, {pressure}\n"
+
+
+def append_weather_to_file(config: Config, filename: str) -> None:
+    """Append weather to file."""
+    weather = get_weather_string(config.openweathermap_url)
+    with open(filename, "a") as file:
+        file.write(weather)
 
 
 def post_brag_to_gist(config: Config, filename: str, content: str) -> None:
@@ -438,6 +446,7 @@ def main(_args: list[str] | None = None) -> int:
     filename = args.bragfile or create_filename(config)
 
     create_if_missing(filename)
+    append_weather_to_file(config, filename)
 
     open_editor(config, filename)
 
