@@ -62,6 +62,7 @@ github_url = https://api.github.com
 github_user =
 github_pat =
 gist_id =
+openweathermap_url =
 ```
 
 | field                 | value                                                        | required |
@@ -78,8 +79,29 @@ gist_id =
 | github_user           | GitHub user name                                             | no       |
 | github_pat            | GitHub personal access token with Gist read/write permission | no       |
 | gist_id               | Gist ID to add brag file to                                  | no       |
+| openweathermap_url    | OpenWeatherMap url with api key to pull current weather      | no       |
 
 **note:** `github_user`, `github_pat`, and `gist_id` are all jointly required if used
+
+---
+
+### OpenWeatherMap
+
+When provided, braghook will poll OpenWeatherMap on each edit of the brag file. The current weather information will be appended to the bottom of the current file.
+
+This feature expects an [OpenWeatherMap current weather endpoint](https://openweathermap.org/current#zip) such as:
+
+```
+https://api.openweathermap.org/data/2.5/weather?zip=[your_zipcode],us&appid=[your_api_here]
+```
+
+The output line looks like this:
+
+```
+min: -9.0°C, max: -7.3°C, feels like: -12.8°C, humidity: 87%, pressure: 1022hPa
+```
+
+You will need to provide an API key. They are free with a registered account and allow 60 pulls per hour.
 
 ---
 

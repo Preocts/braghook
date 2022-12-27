@@ -39,6 +39,7 @@ Write your brag here. Summarize what you did today, what you learned,
 
 - Bullet specific things you did (meetings, tasks, etc.)
   - Nest details such as links to tasks, commits, or PRs
+
 """
 
 
@@ -58,6 +59,7 @@ class Config:
     github_user: str = ""
     github_pat: str = ""
     gist_id: str = ""
+    openweathermap_url: str = ""
 
 
 logger = logging.getLogger(__name__)
@@ -82,6 +84,7 @@ def load_config(config_file: str | None = None) -> Config:
         github_user=default.get("github_user", fallback=""),
         github_pat=default.get("github_pat", fallback=""),
         gist_id=default.get("gist_id", fallback=""),
+        openweathermap_url=default.get("openweathermap_url", fallback=""),
     )
 
 
@@ -101,10 +104,7 @@ def create_config(config_file: str | None = None) -> None:
 
 def open_editor(config: Config, filename: str) -> None:
     """Open the editor."""
-    if not Path(filename).exists():
-        create_empty_template_file(filename)
     args = config.editor_args.split()
-
     args.append(str(filename))
     subprocess.run([config.editor, *args])
 
@@ -120,6 +120,12 @@ def create_empty_template_file(filename: str) -> None:
 def create_filename(config: Config) -> str:
     """Create the filename using the current date."""
     return str(Path(config.workdir) / datetime.now().strftime("brag-%Y-%m-%d.md"))
+
+
+def create_if_missing(filename: str) -> None:
+    """Create the file if it doesn't exist."""
+    if not Path(filename).exists():
+        create_empty_template_file(filename)
 
 
 def read_file_contents(filename: str) -> str:
@@ -139,28 +145,70 @@ def send_message(config: Config, content: str) -> None:
             author_icon=config.author_icon,
             content=content,
         )
-        post_message(url=url, data=data)
+        _post(url=url, data=data)
 
 
-def post_message(
+def split_uri(uri: str) -> tuple[str, str]:
+    """Split the URI into host and path."""
+    uri = uri.replace("http://", "").replace("https://", "")
+    host = uri.split("/", 1)[0]
+    path = uri.replace(host, "")
+    return host, path
+
+
+def _post(
     url: str,
     data: dict[str, Any],
     headers: dict[str, str] | None = None,
 ) -> None:
-    """Post the message to defined webhooks in config."""
+    """Post the data to the URL. Expects JSON."""
     headers = headers or {"content-type": "application/json"}
+    host, path = split_uri(url)
 
-    # Remove http(s):// from the url
-    url = url.replace("http://", "").replace("https://", "")
-
-    # Split the url into host and path
-    url_parts = url.split("/", 1)
-
-    conn = http.client.HTTPSConnection(url_parts[0])
-    conn.request("POST", f"/{url_parts[1]}", json.dumps(data), headers)
+    conn = http.client.HTTPSConnection(host)
+    conn.request("POST", path, json.dumps(data), headers)
     response = conn.getresponse()
     if response.status not in range(200, 300):
         logger.error("Error sending message: %s", response.read())
+
+
+def _get(
+    url: str,
+    headers: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """Get the data from the URL. Expected to return JSON."""
+    headers = headers or {"content-type": "application/json"}
+    host, path = split_uri(url)
+
+    conn = http.client.HTTPSConnection(host)
+    conn.request("GET", path, headers=headers)
+    response = conn.getresponse()
+    if response.status not in range(200, 300):
+        logger.error("Error fetching message: %s", response.read())
+    return json.loads(response.read())
+
+
+def get_weather_string(url: str) -> str:
+    """Get the weather string. Uses provided OpenWeatherMap URL and API key."""
+    if not url:
+        return ""
+
+    data = _get(url)
+
+    temp_min_c = f"min: {data['main']['temp_min'] - 273.15:.1f}°C"
+    temp_max_c = f"max: {data['main']['temp_max'] - 273.15:.1f}°C"
+    temp_feels_like_c = f"feels like: {data['main']['feels_like'] - 273.15:.1f}°C"
+    humidity = f"humidity: {data['main']['humidity']}%"
+    pressure = f"pressure: {data['main']['pressure']}hPa"
+
+    return f"{temp_min_c}, {temp_max_c}, {temp_feels_like_c}, {humidity}, {pressure}\n"
+
+
+def append_weather_to_file(config: Config, filename: str) -> None:
+    """Append weather to file."""
+    weather = get_weather_string(config.openweathermap_url)
+    with open(filename, "a") as file:
+        file.write(weather)
 
 
 def post_brag_to_gist(config: Config, filename: str, content: str) -> None:
@@ -396,6 +444,9 @@ def main(_args: list[str] | None = None) -> int:
 
     config = load_config(args.config)
     filename = args.bragfile or create_filename(config)
+
+    create_if_missing(filename)
+    append_weather_to_file(config, filename)
 
     open_editor(config, filename)
 

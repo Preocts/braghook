@@ -30,6 +30,7 @@ def test_load_config() -> None:
     assert config.github_user == ""
     assert config.github_pat == ""
     assert config.gist_id == ""
+    assert config.openweathermap_url == ""
 
 
 def test_create_config_with_tempfile() -> None:
@@ -74,29 +75,36 @@ def test_create_filename() -> None:
     assert braghook.create_filename(config) == str(filename)
 
 
-def test_open_editor_file_exists() -> None:
-    config = braghook.Config(editor_args="--test_flag")
-    with tempfile.NamedTemporaryFile(mode="w") as file:
-        with patch("subprocess.run") as mock_run:
-            with patch(
-                "braghook.braghook.create_empty_template_file"
-            ) as mock_create_file:
-                braghook.open_editor(config, file.name)
-
-                mock_run.assert_called_once_with(["vim", "--test_flag", str(file.name)])
-                mock_create_file.assert_not_called()
-
-
-def test_open_editor_file_does_not_exist() -> None:
-    config = braghook.Config(editor_args="--test_flag")
+def test_create_if_missing() -> None:
     filename = "tests/test-brag.md"
 
-    with patch("subprocess.run") as mock_run:
-        with patch("braghook.braghook.create_empty_template_file") as mock_create_file:
-            braghook.open_editor(config, filename)
+    with patch("braghook.braghook.create_empty_template_file") as mock_create_file:
+        braghook.create_if_missing(filename)
 
-            mock_create_file.assert_called_once_with(filename)
-            mock_run.assert_called_once_with(["vim", "--test_flag", str(filename)])
+        mock_create_file.assert_called_once_with(filename)
+
+
+def test_create_if_missing_does_not_overwrite() -> None:
+    with tempfile.NamedTemporaryFile(mode="w", delete=False) as file:
+        file.write("Test")
+
+    try:
+        with patch("braghook.braghook.create_empty_template_file") as mock_create_file:
+            braghook.create_if_missing(file.name)
+
+        mock_create_file.assert_not_called()
+
+    finally:
+        os.remove(file.name)
+
+
+def test_open_editor_file_exists() -> None:
+    config = braghook.Config(editor_args="--test_flag")
+    filename = "tests/test-brag.md"
+    with patch("subprocess.run") as mock_run:
+        braghook.open_editor(config, filename)
+
+        mock_run.assert_called_once_with(["vim", "--test_flag", filename])
 
 
 def test_read_file_contents() -> None:
@@ -122,7 +130,17 @@ def test_create_empty_template_file() -> None:
         os.remove(filename)
 
 
-def test_post_message() -> None:
+def test_split_uri() -> None:
+    uri = "https://discord.com/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz"
+    uri_no_path = "https://discord.com"
+    expected = ("discord.com", "/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz")
+    expected_no_path = ("discord.com", "")
+
+    assert braghook.split_uri(uri) == expected
+    assert braghook.split_uri(uri_no_path) == expected_no_path
+
+
+def test__post() -> None:
     url = "https://discord.com/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz"
     message = {"message": "Test message"}
     expected_domain = "discord.com"
@@ -131,7 +149,7 @@ def test_post_message() -> None:
 
     with patch("http.client.HTTPSConnection") as mock_connection:
         mock_connection.return_value.getresponse.return_value.status = 204
-        braghook.post_message(url, message)
+        braghook._post(url, message)
 
         mock_connection.assert_called_once_with(expected_domain)
         mock_connection.return_value.request.assert_called_once_with(
@@ -139,16 +157,38 @@ def test_post_message() -> None:
         )
 
 
-def test_post_message_failed(caplog: pytest.LogCaptureFixture) -> None:
+def test__post_failed(caplog: pytest.LogCaptureFixture) -> None:
     url = "https://discord.com/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz"
     message = {"message": "Test message"}
 
     with patch("http.client.HTTPSConnection") as mock_connection:
         mock_connection.return_value.getresponse.return_value.status = 400
 
-        braghook.post_message(url, message)
+        braghook._post(url, message)
 
         assert "Error sending message:" in caplog.text
+
+
+def test__get() -> None:
+    url = "https://api.github.com/gists/1234567890"
+    response_bytes = json.dumps({"test": "response"}).encode("utf-8")
+    expected_domain = "api.github.com"
+    expected_route = "/gists/1234567890"
+    expected_headers = {"content-type": "application/json"}
+    expected_response = {"test": "response"}
+
+    with patch("http.client.HTTPSConnection") as mock_connection:
+        mock_connection.return_value.getresponse.return_value.read.return_value = (
+            response_bytes
+        )
+        mock_connection.return_value.getresponse.return_value.status = 200
+        result = braghook._get(url)
+
+        assert result == expected_response
+        mock_connection.assert_called_once_with(expected_domain)
+        mock_connection.return_value.request.assert_called_once_with(
+            "GET", expected_route, headers=expected_headers
+        )
 
 
 def test_send_message() -> None:
@@ -157,7 +197,7 @@ def test_send_message() -> None:
     )
     message = "Test message"
 
-    with patch("braghook.braghook.post_message") as mock_post_message:
+    with patch("braghook.braghook._post") as mock_post_message:
         braghook.send_message(config, message)
 
         mock_post_message.assert_called_once()
@@ -220,6 +260,57 @@ def test_post_brag_tol_gist_no_pat() -> None:
         braghook.post_brag_to_gist(config, "bragging-rights.md", "message")
 
         mock_connection.assert_not_called()
+
+
+def test_get_weather_string() -> None:
+    config = braghook.Config(
+        openweathermap_url="https://api.openweathermap.org/data/2.5/weather"
+    )
+    weather = {
+        "main": {
+            "temp": 300.15,
+            "feels_like": 300.15,
+            "temp_min": 300.15,
+            "temp_max": 300.15,
+            "pressure": 1013,
+            "humidity": 81,
+        },
+        "wind": {"speed": 4.6, "deg": 90},
+        "clouds": {"all": 90},
+        "weather": [{"description": "light intensity drizzle"}],
+    }
+    expected_weather_string = "min: 27.0°C, max: 27.0°C, feels like: 27.0°C, humidity: 81%, pressure: 1013hPa\n"  # noqa: E501
+
+    with patch("braghook.braghook._get") as mock_get:
+        mock_get.return_value = weather
+        result = braghook.get_weather_string(config.openweathermap_url)
+
+        assert result == expected_weather_string
+
+
+def test_append_weather_to_file() -> None:
+    config = braghook.Config(
+        openweathermap_url="https://api.openweathermap.org/data/2.5/weather"
+    )
+    weather_string = "min: 27.0°C, max: 27.0°C, feels like: 27.0°C\n"
+
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as file:
+            ...
+
+        with patch("braghook.braghook.get_weather_string") as mock_weather_string:
+            mock_weather_string.return_value = weather_string
+            braghook.append_weather_to_file(config, file.name)
+
+            mock_weather_string.assert_called_once()
+
+        with open(file.name) as read_file:
+            result = read_file.read()
+
+        assert weather_string in result
+
+    finally:
+        os.remove(file.name)
 
 
 @pytest.mark.parametrize(
@@ -325,80 +416,104 @@ def test_parse_args() -> None:
 
 
 def test_main() -> None:
-    with patch("braghook.braghook.load_config") as mock_load_config:
-        with patch("braghook.braghook.open_editor") as mock_open_editor:
-            with patch("braghook.braghook.read_file_contents") as mock_read_file:
-                with patch("braghook.braghook.send_message") as mock_send_message:
-                    with patch("braghook.braghook.get_input") as mock_get_input:
-                        with patch(
-                            "braghook.braghook.post_brag_to_gist"
-                        ) as mock_post_brag:
-                            mock_get_input.return_value = "y"
+    module = "braghook.braghook"
+    # Turn black off to make this more readable and easier to maintain
+    # fmt: off
+    with patch("braghook.braghook.load_config") as load_config, \
+            patch(f"{module}.create_if_missing") as create_if_missing, \
+            patch(f"{module}.append_weather_to_file") as append_weather_to_file, \
+            patch(f"{module}.open_editor") as open_editor, \
+            patch(f"{module}.read_file_contents") as read_file, \
+            patch(f"{module}.send_message") as send_message, \
+            patch(f"{module}.get_input") as get_input, \
+            patch(f"{module}.post_brag_to_gist") as post_brag:
+        # fmt: on
 
-                            braghook.main(
-                                [
-                                    "--config",
-                                    "tests/braghook.ini",
-                                    "--bragfile",
-                                    "tests/brag.md",
-                                ]
-                            )
+        get_input.return_value = "y"
 
-                            mock_load_config.assert_called_once_with(
-                                "tests/braghook.ini"
-                            )
-                            mock_open_editor.assert_called_once()
-                            mock_read_file.assert_called_once()
-                            mock_send_message.assert_called_once()
-                            mock_get_input.assert_called_once()
-                            mock_post_brag.assert_called_once()
+        braghook.main(
+            [
+                "--config",
+                "tests/bh.ini",
+                "--bragfile",
+                "tests/brag.md",
+            ]
+        )
+
+        load_config.assert_called_once_with("tests/bh.ini")
+        open_editor.assert_called_once()
+        read_file.assert_called_once()
+        create_if_missing.assert_called_once()
+        append_weather_to_file.assert_called_once()
+        send_message.assert_called_once()
+        get_input.assert_called_once()
+        post_brag.assert_called_once()
 
 
 def test_main_no_send() -> None:
-    with patch("braghook.braghook.load_config") as mock_load_config:
-        with patch("braghook.braghook.open_editor") as mock_open_editor:
-            with patch("braghook.braghook.read_file_contents") as mock_read_file:
-                with patch("braghook.braghook.send_message") as mock_send_message:
-                    with patch("braghook.braghook.get_input") as mock_get_input:
-                        mock_get_input.return_value = "n"
+    module = "braghook.braghook"
+    # Turn black off to make this more readable and easier to maintain
+    # fmt: off
+    with patch(f"{module}.load_config") as load_config, \
+            patch(f"{module}.create_if_missing") as create_if_missing, \
+            patch(f"{module}.append_weather_to_file") as append_weather_to_file, \
+            patch(f"{module}.open_editor") as open_editor, \
+            patch(f"{module}.read_file_contents") as read_file, \
+            patch(f"{module}.send_message") as send_message, \
+            patch(f"{module}.get_input") as get_input:
+        # fmt: on
 
-                        braghook.main(
-                            [
-                                "--config",
-                                "tests/braghook.ini",
-                                "--bragfile",
-                                "tests/brag.md",
-                            ]
-                        )
+        get_input.return_value = "n"
 
-                        mock_load_config.assert_called_once_with("tests/braghook.ini")
-                        mock_open_editor.assert_called_once()
-                        mock_read_file.assert_not_called()
-                        mock_send_message.assert_not_called()
+        braghook.main(
+            [
+                "--config",
+                "tests/braghook.ini",
+                "--bragfile",
+                "tests/brag.md",
+            ]
+        )
+
+        load_config.assert_called_once_with("tests/braghook.ini")
+        create_if_missing.assert_called_once()
+        append_weather_to_file.assert_called_once()
+        open_editor.assert_called_once()
+        read_file.assert_not_called()
+        send_message.assert_not_called()
 
 
 def test_main_create_config() -> None:
-    with patch("braghook.braghook.create_config") as mock_create_config:
-        with patch("braghook.braghook.load_config") as mock_load_config:
-            with patch("braghook.braghook.open_editor") as mock_open_editor:
-                with patch("braghook.braghook.read_file_contents") as mock_read_file:
-                    with patch("braghook.braghook.send_message") as mock_send_message:
-                        with patch("braghook.braghook.get_input") as mock_get_input:
-                            mock_get_input.return_value = "y"
+    module = "braghook.braghook"
+    # Turn black off to make this more readable and easier to maintain
+    # Someday 3.9 will go EOL and we can use parenthesis instead of \
+    # fmt: off
+    with patch(f"{module}.create_config") as create_config, \
+            patch(f"{module}.load_config") as load_config, \
+            patch(f"{module}.create_if_missing") as create_if_missing, \
+            patch(f"{module}.append_weather_to_file") as append_weather_to_file, \
+            patch(f"{module}.open_editor") as open_editor, \
+            patch(f"{module}.read_file_contents") as read_file, \
+            patch(f"{module}.send_message") as send_message, \
+            patch(f"{module}.get_input") as get_input:
+        # fmt: on
 
-                            braghook.main(
-                                [
-                                    "--config",
-                                    "tests/braghook.ini",
-                                    "--bragfile",
-                                    "tests/brag.md",
-                                    "--create-config",
-                                ]
-                            )
+        get_input.return_value = "y"
 
-                            mock_create_config.assert_called_once()
-                            mock_load_config.assert_not_called()
-                            mock_open_editor.assert_not_called()
-                            mock_read_file.assert_not_called()
-                            mock_send_message.assert_not_called()
-                            mock_get_input.assert_not_called()
+        braghook.main(
+            [
+                "--config",
+                "tests/braghook.ini",
+                "--bragfile",
+                "tests/brag.md",
+                "--create-config",
+            ]
+        )
+
+        create_config.assert_called_once()
+        load_config.assert_not_called()
+        create_if_missing.assert_not_called()
+        append_weather_to_file.assert_not_called()
+        open_editor.assert_not_called()
+        read_file.assert_not_called()
+        send_message.assert_not_called()
+        get_input.assert_not_called()
