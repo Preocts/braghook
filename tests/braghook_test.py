@@ -151,6 +151,28 @@ def test__post_failed(caplog: pytest.LogCaptureFixture) -> None:
         assert "Error sending message:" in caplog.text
 
 
+def test__get() -> None:
+    url = "https://api.github.com/gists/1234567890"
+    response_bytes = json.dumps({"test": "response"}).encode("utf-8")
+    expected_domain = "api.github.com"
+    expected_route = "/gists/1234567890"
+    expected_headers = {"content-type": "application/json"}
+    expected_response = {"test": "response"}
+
+    with patch("http.client.HTTPSConnection") as mock_connection:
+        mock_connection.return_value.getresponse.return_value.read.return_value = (
+            response_bytes
+        )
+        mock_connection.return_value.getresponse.return_value.status = 200
+        result = braghook._get(url)
+
+        assert result == expected_response
+        mock_connection.assert_called_once_with(expected_domain)
+        mock_connection.return_value.request.assert_called_once_with(
+            "GET", expected_route, headers=expected_headers
+        )
+
+
 def test_send_message() -> None:
     config = braghook.Config(
         discord_webhook="https://discord.com/api/webhooks/1234567890/abc",

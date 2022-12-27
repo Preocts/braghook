@@ -155,7 +155,7 @@ def _post(
     data: dict[str, Any],
     headers: dict[str, str] | None = None,
 ) -> None:
-    """Post the data to the URL."""
+    """Post the data to the URL. Expects JSON."""
     headers = headers or {"content-type": "application/json"}
     host, path = split_uri(url)
 
@@ -164,6 +164,22 @@ def _post(
     response = conn.getresponse()
     if response.status not in range(200, 300):
         logger.error("Error sending message: %s", response.read())
+
+
+def _get(
+    url: str,
+    headers: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """Get the data from the URL. Expected to return JSON."""
+    headers = headers or {"content-type": "application/json"}
+    host, path = split_uri(url)
+
+    conn = http.client.HTTPSConnection(host)
+    conn.request("GET", path, headers=headers)
+    response = conn.getresponse()
+    if response.status not in range(200, 300):
+        logger.error("Error fetching message: %s", response.read())
+    return json.loads(response.read())
 
 
 def post_brag_to_gist(config: Config, filename: str, content: str) -> None:
