@@ -103,10 +103,7 @@ def create_config(config_file: str | None = None) -> None:
 
 def open_editor(config: Config, filename: str) -> None:
     """Open the editor."""
-    if not Path(filename).exists():
-        create_empty_template_file(filename)
     args = config.editor_args.split()
-
     args.append(str(filename))
     subprocess.run([config.editor, *args])
 
@@ -122,6 +119,12 @@ def create_empty_template_file(filename: str) -> None:
 def create_filename(config: Config) -> str:
     """Create the filename using the current date."""
     return str(Path(config.workdir) / datetime.now().strftime("brag-%Y-%m-%d.md"))
+
+
+def create_if_missing(filename: str) -> None:
+    """Create the file if it doesn't exist."""
+    if not Path(filename).exists():
+        create_empty_template_file(filename)
 
 
 def read_file_contents(filename: str) -> str:
@@ -433,6 +436,8 @@ def main(_args: list[str] | None = None) -> int:
 
     config = load_config(args.config)
     filename = args.bragfile or create_filename(config)
+
+    create_if_missing(filename)
 
     open_editor(config, filename)
 
