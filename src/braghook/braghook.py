@@ -58,6 +58,7 @@ class Config:
     github_user: str = ""
     github_pat: str = ""
     gist_id: str = ""
+    openweathermap_url: str = ""
 
 
 logger = logging.getLogger(__name__)
@@ -82,6 +83,7 @@ def load_config(config_file: str | None = None) -> Config:
         github_user=default.get("github_user", fallback=""),
         github_pat=default.get("github_pat", fallback=""),
         gist_id=default.get("gist_id", fallback=""),
+        openweathermap_url=default.get("openweathermap_url", fallback=""),
     )
 
 
@@ -180,6 +182,22 @@ def _get(
     if response.status not in range(200, 300):
         logger.error("Error fetching message: %s", response.read())
     return json.loads(response.read())
+
+
+def get_weather_string(config: Config) -> str:
+    """Get the weather string. Uses provided OpenWeatherMap URL and API key."""
+    if not config.openweathermap_url:
+        return ""
+
+    data = _get(config.openweathermap_url)
+
+    temp_min_c = f"min: {data['main']['temp_min'] - 273.15:.1f}°C"
+    temp_max_c = f"max: {data['main']['temp_max'] - 273.15:.1f}°C"
+    temp_feels_like_c = f"feels like: {data['main']['feels_like'] - 273.15:.1f}°C"
+    humidity = f"humidity: {data['main']['humidity']}%"
+    pressure = f"pressure: {data['main']['pressure']}hPa"
+
+    return f"{temp_min_c}, {temp_max_c}, {temp_feels_like_c}, {humidity}, {pressure}"
 
 
 def post_brag_to_gist(config: Config, filename: str, content: str) -> None:

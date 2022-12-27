@@ -30,6 +30,7 @@ def test_load_config() -> None:
     assert config.github_user == ""
     assert config.github_pat == ""
     assert config.gist_id == ""
+    assert config.openweathermap_url == ""
 
 
 def test_create_config_with_tempfile() -> None:
@@ -122,6 +123,16 @@ def test_create_empty_template_file() -> None:
         os.remove(filename)
 
 
+def test_split_uri() -> None:
+    uri = "https://discord.com/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz"
+    uri_no_path = "https://discord.com"
+    expected = ("discord.com", "/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz")
+    expected_no_path = ("discord.com", "")
+
+    assert braghook.split_uri(uri) == expected
+    assert braghook.split_uri(uri_no_path) == expected_no_path
+
+
 def test__post() -> None:
     url = "https://discord.com/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz"
     message = {"message": "Test message"}
@@ -185,16 +196,6 @@ def test_send_message() -> None:
         mock_post_message.assert_called_once()
 
 
-def test_split_uri() -> None:
-    uri = "https://discord.com/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz"
-    uri_no_path = "https://discord.com"
-    expected = ("discord.com", "/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz")
-    expected_no_path = ("discord.com", "")
-
-    assert braghook.split_uri(uri) == expected
-    assert braghook.split_uri(uri_no_path) == expected_no_path
-
-
 def test_post_brag_to_gist() -> None:
     date = datetime.now().strftime("%Y-%m-%d")
     config = braghook.Config(
@@ -252,6 +253,34 @@ def test_post_brag_tol_gist_no_pat() -> None:
         braghook.post_brag_to_gist(config, "bragging-rights.md", "message")
 
         mock_connection.assert_not_called()
+
+
+def test_get_weather_string() -> None:
+    config = braghook.Config(
+        openweathermap_url="https://api.openweathermap.org/data/2.5/weather"
+    )
+    weather = {
+        "main": {
+            "temp": 300.15,
+            "feels_like": 300.15,
+            "temp_min": 300.15,
+            "temp_max": 300.15,
+            "pressure": 1013,
+            "humidity": 81,
+        },
+        "wind": {"speed": 4.6, "deg": 90},
+        "clouds": {"all": 90},
+        "weather": [{"description": "light intensity drizzle"}],
+    }
+    expected_weather_string = (
+        "min: 27.0°C, max: 27.0°C, feels like: 27.0°C, humidity: 81%, pressure: 1013hPa"
+    )
+
+    with patch("braghook.braghook._get") as mock_get:
+        mock_get.return_value = weather
+        result = braghook.get_weather_string(config)
+
+        assert result == expected_weather_string
 
 
 @pytest.mark.parametrize(
