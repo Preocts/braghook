@@ -192,7 +192,7 @@ def _get(
 def get_weather_string(url: str) -> str:
     """Get the weather string. Uses provided OpenWeatherMap URL and API key."""
     if not url:
-        return ""  # @@@
+        return ""
 
     data = _get(url)
 
