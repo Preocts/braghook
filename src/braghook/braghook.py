@@ -175,7 +175,7 @@ def _post(
 def _get(
     url: str,
     headers: dict[str, str] | None = None,
-) -> dict[str, Any]:
+) -> dict[str, Any] | None:
     """Get the data from the URL. Expected to return JSON."""
     headers = headers or {"content-type": "application/json"}
     host, path = split_uri(url)
@@ -185,13 +185,14 @@ def _get(
     response = conn.getresponse()
     if response.status not in range(200, 300):
         logger.error("Error fetching message: %s", response.read())
+        return None
     return json.loads(response.read())
 
 
 def get_weather_string(url: str) -> str:
     """Get the weather string. Uses provided OpenWeatherMap URL and API key."""
     if not url:
-        return ""
+        return ""  # @@@
 
     data = _get(url)
 

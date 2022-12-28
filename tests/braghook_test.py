@@ -191,6 +191,18 @@ def test__get() -> None:
         )
 
 
+def test__get_failed(caplog: pytest.LogCaptureFixture) -> None:
+    url = "https://api.github.com/gists/1234567890"
+
+    with patch("http.client.HTTPSConnection") as mock_connection:
+        mock_connection.return_value.getresponse.return_value.status = 400
+
+        result = braghook._get(url)
+
+        assert result is None
+        assert "Error fetching message:" in caplog.text
+
+
 def test_send_message() -> None:
     config = braghook.Config(
         discord_webhook="https://discord.com/api/webhooks/1234567890/abc",
