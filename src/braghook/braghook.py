@@ -175,7 +175,7 @@ def _post(
 def _get(
     url: str,
     headers: dict[str, str] | None = None,
-) -> dict[str, Any]:
+) -> dict[str, Any] | None:
     """Get the data from the URL. Expected to return JSON."""
     headers = headers or {"content-type": "application/json"}
     host, path = split_uri(url)
@@ -185,6 +185,7 @@ def _get(
     response = conn.getresponse()
     if response.status not in range(200, 300):
         logger.error("Error fetching message: %s", response.read())
+        return None
     return json.loads(response.read())
 
 
@@ -194,6 +195,9 @@ def get_weather_string(url: str) -> str:
         return ""
 
     data = _get(url)
+
+    if not data:
+        return ""
 
     temp_min_c = f"min: {data['main']['temp_min'] - 273.15:.1f}°C"
     temp_max_c = f"max: {data['main']['temp_max'] - 273.15:.1f}°C"

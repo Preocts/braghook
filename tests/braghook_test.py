@@ -191,6 +191,18 @@ def test__get() -> None:
         )
 
 
+def test__get_failed(caplog: pytest.LogCaptureFixture) -> None:
+    url = "https://api.github.com/gists/1234567890"
+
+    with patch("http.client.HTTPSConnection") as mock_connection:
+        mock_connection.return_value.getresponse.return_value.status = 400
+
+        result = braghook._get(url)
+
+        assert result is None
+        assert "Error fetching message:" in caplog.text
+
+
 def test_send_message() -> None:
     config = braghook.Config(
         discord_webhook="https://discord.com/api/webhooks/1234567890/abc",
@@ -286,6 +298,28 @@ def test_get_weather_string() -> None:
         result = braghook.get_weather_string(config.openweathermap_url)
 
         assert result == expected_weather_string
+
+
+def test_get_weather_string_no_url() -> None:
+    config = braghook.Config(openweathermap_url="")
+
+    with patch("braghook.braghook._get") as mock_get:
+        result = braghook.get_weather_string(config.openweathermap_url)
+
+        mock_get.assert_not_called()
+        assert result == ""
+
+
+def test_get_weather_empty_response() -> None:
+    config = braghook.Config(
+        openweathermap_url="https://api.openweathermap.org/data/2.5/weather"
+    )
+
+    with patch("braghook.braghook._get") as mock_get:
+        mock_get.return_value = {}
+        result = braghook.get_weather_string(config.openweathermap_url)
+
+        assert result == ""
 
 
 def test_append_weather_to_file() -> None:
