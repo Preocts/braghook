@@ -196,6 +196,9 @@ def get_weather_string(url: str) -> str:
 
     data = _get(url)
 
+    if not data:
+        return ""
+
     temp_min_c = f"min: {data['main']['temp_min'] - 273.15:.1f}°C"
     temp_max_c = f"max: {data['main']['temp_max'] - 273.15:.1f}°C"
     temp_feels_like_c = f"feels like: {data['main']['feels_like'] - 273.15:.1f}°C"

@@ -300,6 +300,28 @@ def test_get_weather_string() -> None:
         assert result == expected_weather_string
 
 
+def test_get_weather_string_no_url() -> None:
+    config = braghook.Config(openweathermap_url="")
+
+    with patch("braghook.braghook._get") as mock_get:
+        result = braghook.get_weather_string(config.openweathermap_url)
+
+        mock_get.assert_not_called()
+        assert result == ""
+
+
+def test_get_weather_empty_response() -> None:
+    config = braghook.Config(
+        openweathermap_url="https://api.openweathermap.org/data/2.5/weather"
+    )
+
+    with patch("braghook.braghook._get") as mock_get:
+        mock_get.return_value = {}
+        result = braghook.get_weather_string(config.openweathermap_url)
+
+        assert result == ""
+
+
 def test_append_weather_to_file() -> None:
     config = braghook.Config(
         openweathermap_url="https://api.openweathermap.org/data/2.5/weather"
