@@ -28,8 +28,17 @@ python -m pip install .
 From GitHub:
 
 ```bash
-pip install braghook @ git+https://github.com/Preocts/braghook@main
+pip install git+https://github.com/Preocts/braghook@main
 ```
+
+From curl:
+
+```
+curl https://raw.githubusercontent.com/Preocts/braghook/main/src/braghook/braghook.py -O
+```
+
+**Note**: "`/main/`" in the path can be replaced with desired tag/branch. The module
+is completely stand-alone and can be invoked directly.
 
 ### Usage:
 
