@@ -136,7 +136,16 @@ def read_file_contents(filename: str) -> str:
 
 def send_message(config: Config, content: str) -> None:
     """Send the message to any webhooks defined in config."""
-    for config_field, builder in BUILDERS.items():
+    # Define the builders here, used in the main script
+    # NOTE: The key is the config field that defines the url
+    # NOTE: The value is the function that builds the message
+    builders: dict[str, Builder] = {
+        "discord_webhook": build_discord_webhook,
+        "discord_webhook_plain": build_discord_webhook_plain,
+        "msteams_webhook": build_msteams_webhook,
+    }
+
+    for config_field, builder in builders.items():
         url = getattr(config, config_field)
         if not url:
             continue  # Skip if the webhook is not defined in config
@@ -426,16 +435,6 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
 def get_input(prompt: str) -> str:
     """Get input from the user."""
     return input(prompt)
-
-
-# Define the builders here, used in the main script
-# NOTE: The key is the config field that defines the url
-# NOTE: The value is the function that builds the message
-BUILDERS: dict[str, Builder] = {
-    "discord_webhook": build_discord_webhook,
-    "discord_webhook_plain": build_discord_webhook_plain,
-    "msteams_webhook": build_msteams_webhook,
-}
 
 
 def main(_args: list[str] | None = None) -> int:
