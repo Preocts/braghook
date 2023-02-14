@@ -96,7 +96,10 @@ openweathermap_url =
 
 ### OpenWeatherMap
 
-When provided, braghook will poll OpenWeatherMap on each edit of the brag file. The current weather information will be appended to the bottom of the current file.
+When provided, braghook will poll OpenWeatherMap on each edit of the brag file.
+The current weather information will be appended to the bottom of the current
+file. This happens when the file is closed, ensures a newline between the last
+line enter and after.
 
 This feature expects an [OpenWeatherMap current weather endpoint](https://openweathermap.org/current#zip) such as:
 
