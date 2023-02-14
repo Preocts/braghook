@@ -322,29 +322,18 @@ def test_get_weather_empty_response() -> None:
         assert result == ""
 
 
-def test_append_weather_to_file() -> None:
-    config = braghook.Config(
-        openweathermap_url="https://api.openweathermap.org/data/2.5/weather"
-    )
-    weather_string = "min: 27.0°C, max: 27.0°C, feels like: 27.0°C\n"
+def test_append_weather_to_content_only_once() -> None:
+    config = braghook.Config(openweathermap_url="https://mock.com/api/openweather")
+    weather_string = "min: 27.0°C, max: 27.0°C, feels like: 27.0°C, humidity: 81%, pressure: 1013hPa\n"  # noqa: E501
+    content = MOCKFILE_CONTENTS
 
-    try:
-        with tempfile.NamedTemporaryFile(mode="w", delete=False) as file:
-            ...
-
-        with patch("braghook.braghook.get_weather_string") as mock_weather_string:
-            mock_weather_string.return_value = weather_string
-            braghook.append_weather_to_file(config, file.name)
-
-            mock_weather_string.assert_called_once()
-
-        with open(file.name) as read_file:
-            result = read_file.read()
-
-        assert weather_string in result
-
-    finally:
-        os.remove(file.name)
+    with patch("braghook.braghook.get_weather_string") as mock_weather_string:
+        mock_weather_string.return_value = weather_string
+        # Call twice to ensure it only appends once
+        content = braghook.append_weather_to_content(config, content)
+        content = braghook.append_weather_to_content(config, content)
+        print(content)
+        mock_weather_string.assert_called_once()
 
 
 @pytest.mark.parametrize(
@@ -455,9 +444,9 @@ def test_main() -> None:
     # fmt: off
     with patch("braghook.braghook.load_config") as load_config, \
             patch(f"{module}.create_if_missing") as create_if_missing, \
-            patch(f"{module}.append_weather_to_file") as append_weather_to_file, \
             patch(f"{module}.open_editor") as open_editor, \
             patch(f"{module}.read_file_contents") as read_file, \
+            patch(f"{module}.append_weather_to_content") as append_weather_to_content, \
             patch(f"{module}.send_message") as send_message, \
             patch(f"{module}.get_input") as get_input, \
             patch(f"{module}.post_brag_to_gist") as post_brag:
@@ -478,7 +467,7 @@ def test_main() -> None:
         open_editor.assert_called_once()
         read_file.assert_called_once()
         create_if_missing.assert_called_once()
-        append_weather_to_file.assert_called_once()
+        append_weather_to_content.assert_called_once()
         send_message.assert_called_once()
         get_input.assert_called_once()
         post_brag.assert_called_once()
@@ -490,9 +479,9 @@ def test_main_no_send() -> None:
     # fmt: off
     with patch(f"{module}.load_config") as load_config, \
             patch(f"{module}.create_if_missing") as create_if_missing, \
-            patch(f"{module}.append_weather_to_file") as append_weather_to_file, \
             patch(f"{module}.open_editor") as open_editor, \
             patch(f"{module}.read_file_contents") as read_file, \
+            patch(f"{module}.append_weather_to_content") as append_weather_to_content, \
             patch(f"{module}.send_message") as send_message, \
             patch(f"{module}.get_input") as get_input:
         # fmt: on
@@ -510,9 +499,9 @@ def test_main_no_send() -> None:
 
         load_config.assert_called_once_with("tests/braghook.ini")
         create_if_missing.assert_called_once()
-        append_weather_to_file.assert_called_once()
         open_editor.assert_called_once()
         read_file.assert_not_called()
+        append_weather_to_content.assert_not_called()
         send_message.assert_not_called()
 
 
@@ -524,9 +513,9 @@ def test_main_create_config() -> None:
     with patch(f"{module}.create_config") as create_config, \
             patch(f"{module}.load_config") as load_config, \
             patch(f"{module}.create_if_missing") as create_if_missing, \
-            patch(f"{module}.append_weather_to_file") as append_weather_to_file, \
             patch(f"{module}.open_editor") as open_editor, \
             patch(f"{module}.read_file_contents") as read_file, \
+            patch(f"{module}.append_weather_to_content") as append_weather_to_content, \
             patch(f"{module}.send_message") as send_message, \
             patch(f"{module}.get_input") as get_input:
         # fmt: on
@@ -546,8 +535,8 @@ def test_main_create_config() -> None:
         create_config.assert_called_once()
         load_config.assert_not_called()
         create_if_missing.assert_not_called()
-        append_weather_to_file.assert_not_called()
         open_editor.assert_not_called()
         read_file.assert_not_called()
+        append_weather_to_content.assert_not_called()
         send_message.assert_not_called()
         get_input.assert_not_called()
