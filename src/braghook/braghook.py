@@ -217,11 +217,15 @@ def get_weather_string(url: str) -> str:
     return f"{temp_min_c}, {temp_max_c}, {temp_feels_like_c}, {humidity}, {pressure}\n"
 
 
-def append_weather_to_file(config: Config, filename: str) -> None:
-    """Append weather to file."""
+def append_weather_to_content(config: Config, content: str) -> str:
+    """Append weather line to content."""
+    if re.search(r"^min:.+Pa$", content, flags=re.MULTILINE):
+        return content
+
+    content += "\n" if content[-1] != "\n" else ""
     weather = get_weather_string(config.openweathermap_url)
-    with open(filename, "a") as file:
-        file.write(weather)
+    content += weather
+    return content
 
 
 def post_brag_to_gist(config: Config, filename: str, content: str) -> None:
@@ -449,7 +453,6 @@ def main(_args: list[str] | None = None) -> int:
     filename = args.bragfile or create_filename(config)
 
     create_if_missing(filename)
-    append_weather_to_file(config, filename)
 
     open_editor(config, filename)
 
@@ -457,6 +460,7 @@ def main(_args: list[str] | None = None) -> int:
         return 0
 
     content = read_file_contents(filename)
+    append_weather_to_content(config, content)
     send_message(config, content)
     post_brag_to_gist(config, filename, content)
 
