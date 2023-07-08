@@ -1,4 +1,4 @@
-[![Python 3.7 | 3.8 | 3.9 | 3.10 | 3.11](https://img.shields.io/badge/Python-3.7%20%7C%203.8%20%7C%203.9%20%7C%203.10%20%7C%203.11-blue)](https://www.python.org/downloads)
+[![Python 3.8 | 3.9 | 3.10 | 3.11](https://img.shields.io/badge/Python-3.8%20%7C%203.9%20%7C%203.10%20%7C%203.11-blue)](https://www.python.org/downloads)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 
@@ -142,12 +142,27 @@ the desired version while creating the `venv`. (e.g. `python3` or `python3.8`)
 
 ## Installation steps
 
+### Makefile
+
+This repo has a Makefile with some quality of life scripts if the system
+supports `make`.  Please note there are no checks for an active `venv` in the
+Makefile.  If you are on Windows you can install make using scoop or chocolatey.
+
+| PHONY         | Description                                                           |
+| ------------- | --------------------------------------------------------------------- |
+| `install-dev` | install development/test requirements and project as editable install |
+| `coverage`    | Run tests with coverage, generate console report                      |
+| `build-dist`  | Build source distribution and wheel distribution                      |
+| `clean`       | Deletes build, tox, coverage, pytest, mypy, cache, and pyc artifacts  |
+
+
 Clone this repo and enter root directory of repo:
 
 ```console
 $ git clone https://github.com/Preocts/braghook
 $ cd braghook
 ```
+
 
 Create the `venv`:
 
@@ -170,12 +185,16 @@ call the version of the interpreter used to create the `venv`
 
 Install editable library and development requirements:
 
-```console
-# Update pip and tools
-$ python -m pip install --upgrade pip
+### With Makefile:
 
-# Install editable version of library
-$ python -m pip install --editable .[dev]
+```console
+make install-dev
+```
+
+### Without Makefile:
+
+```console
+$ python -m pip install --editable .[dev,test]
 ```
 
 Install pre-commit [(see below for details)](#pre-commit):
@@ -194,10 +213,16 @@ Run pre-commit on all files:
 $ pre-commit run --all-files
 ```
 
-Run tests:
+Run tests (quick):
 
 ```console
-$ tox [-r] [-e py3x]
+$ pytest
+```
+
+Run tests (slow):
+
+```console
+$ tox
 ```
 
 Build dist:
@@ -213,20 +238,6 @@ To deactivate (exit) the `venv`:
 ```console
 $ deactivate
 ```
----
-
-## Note on flake8:
-
-`flake8` is included in the `requirements-dev.txt` of the project. However it
-disagrees with `black`, the formatter of choice, on max-line-length and two
-general linting errors. `.pre-commit-config.yaml` is already configured to
-ignore these. `flake8` doesn't support `pyproject.toml` so be sure to add the
-following to the editor of choice as needed.
-
-```ini
---ignore=W503,E203
---max-line-length=88
-```
 
 ---
 
@@ -241,17 +252,15 @@ with `git` hooks.
 
 ---
 
-## Makefile
+## Error: File "setup.py" not found.
 
-This repo has a Makefile with some quality of life scripts if the system
-supports `make`.  Please note there are no checks for an active `venv` in the
-Makefile.
+If you recieve this error while installing an editible version of this project you have two choices:
 
-| PHONY         | Description                                                                |
-| ------------- | -------------------------------------------------------------------------- |
-| `init`        | Update pip to newest version                                               |
-| `install`     | install the project                                                        |
-| `install-dev` | install development/test requirements and project as editable install      |
-| `upgrade-dev` | update all dependencies, regenerate requirements.txt (disabled by default) |
-| `build-dist`  | Build source distribution and wheel distribution                           |
-| `clean`       | Deletes build, tox, coverage, pytest, mypy, cache, and pyc artifacts       |
+1. Update your `pip` to *at least* version 22.3.1
+2. Add the following empty `setup.py` to the project if upgrading pip is not an option
+
+```py
+from setuptools import setup
+
+setup()
+```
