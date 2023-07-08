@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "braghook"
 version = "0.3.0"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 description = "Bragging is good."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -90,42 +90,3 @@ exclude_lines =[
     "\\.\\.\\.",
     "if TYPE_CHECKING:",
 ]
-
-# This is ignored by flake8, here in case they decide to add it in the future
-[tool.flake8]
-ignore = "W503,E203"
-max-line-length = 88
-
-[tool.tox]
-legacy_tox_ini = """
-[tox]
-envlist = py37,py38,py39,py310,py311,py312,coverage,mypy,pre-commit
-skip_missing_interpreters = true
-isolated_build = True
-
-[testenv]
-deps = .[test]
-commands =
-    coverage run -p -m pytest tests/
-
-[testenv:coverage]
-depends = py37,py38,py39,py310,py311,py312
-parallel_show_output = true
-commands =
-    python -m coverage combine
-    python -m coverage report -m --fail-under=100
-    python -m coverage json
-
-[testenv:mypy]
-deps =
-    mypy
-commands =
-    mypy -p braghook --no-incremental
-
-[testenv:pre-commit]
-depends = coverage
-parallel_show_output = true
-skip_install = true
-deps = pre-commit
-commands = pre-commit run --all-files --show-diff-on-failure
-"""
