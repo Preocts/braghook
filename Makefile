@@ -1,15 +1,12 @@
-.PHONY: init
-init:
-	python -m pip install --upgrade pip
-
-.PHONY: install
-install:
-	python -m pip install --upgrade .
-
 .PHONY: install-dev
 install-dev:
-	python -m pip install --editable .[dev,test]
+	python -m pip install --upgrade --editable .[dev,test]
 	pre-commit install
+
+.PHONY: coverage
+coverage:
+	coverage run -m pytest tests/
+	coverage report -m
 
 .PHONY: build-dist
 build-dist:
