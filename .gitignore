@@ -1,13 +1,8 @@
-# program files
-brag-*
-braghook.ini
-
-# general ignore
 temp_*
 .env
 venv/
 *egg-info/
-.tox/
+.nox/
 .coverage
 .coverage.*
 coverage.xml

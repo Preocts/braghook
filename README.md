@@ -153,7 +153,7 @@ Makefile.  If you are on Windows you can install make using scoop or chocolatey.
 | `install-dev` | install development/test requirements and project as editable install |
 | `coverage`    | Run tests with coverage, generate console report                      |
 | `build-dist`  | Build source distribution and wheel distribution                      |
-| `clean`       | Deletes build, tox, coverage, pytest, mypy, cache, and pyc artifacts  |
+| `clean`       | Deletes build, nox, coverage, pytest, mypy, cache, and pyc artifacts  |
 
 
 Clone this repo and enter root directory of repo:
@@ -222,7 +222,7 @@ $ pytest
 Run tests (slow):
 
 ```console
-$ tox
+$ nox
 ```
 
 Build dist:
