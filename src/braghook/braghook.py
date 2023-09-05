@@ -34,11 +34,11 @@ if TYPE_CHECKING:
 DEFAULT_CONFIG_FILE = "braghook.ini"
 DEFAULT_FILE_TEMPLATE = """### {date}
 
-Write your brag here. Summarize what you did today, what you learned,
- and what you plan to do tomorrow.
+Motivation summary:
 
-- Bullet specific things you did (meetings, tasks, etc.)
-  - Nest details such as links to tasks, commits, or PRs
+Shout outs:
+
+Improvements:
 
 """
 
