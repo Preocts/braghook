@@ -439,6 +439,17 @@ def test_parse_args() -> None:
     assert args.auto_send
 
 
+def test_send_brags() -> None:
+    """Assert expected emitter functions are called."""
+    config = braghook.Config()
+    with patch.object(braghook, "send_message") as mock_send:
+        with patch.object(braghook, "post_brag_to_gist") as mock_post:
+            braghook.send_brags(config, "mock_file", "Mock Content")
+
+    assert mock_send.call_count == 1
+    assert mock_post.call_count == 1
+
+
 def test_main() -> None:
     module = "braghook.braghook"
     # Turn black off to make this more readable and easier to maintain
@@ -446,11 +457,10 @@ def test_main() -> None:
     with patch("braghook.braghook.load_config") as load_config, \
             patch(f"{module}.create_if_missing") as create_if_missing, \
             patch(f"{module}.open_editor") as open_editor, \
+            patch(f"{module}.get_input") as get_input, \
             patch(f"{module}.read_file_contents") as read_file, \
             patch(f"{module}.append_weather_to_content") as append_weather_to_content, \
-            patch(f"{module}.send_message") as send_message, \
-            patch(f"{module}.get_input") as get_input, \
-            patch(f"{module}.post_brag_to_gist") as post_brag:
+            patch(f"{module}.send_brags") as send_brags:
         # fmt: on
 
         get_input.return_value = "y"
@@ -469,9 +479,8 @@ def test_main() -> None:
         read_file.assert_called_once()
         create_if_missing.assert_called_once()
         append_weather_to_content.assert_called_once()
-        send_message.assert_called_once()
         get_input.assert_called_once()
-        post_brag.assert_called_once()
+        send_brags.assert_called_once()
 
 
 def test_main_no_send() -> None:
@@ -481,10 +490,10 @@ def test_main_no_send() -> None:
     with patch(f"{module}.load_config") as load_config, \
             patch(f"{module}.create_if_missing") as create_if_missing, \
             patch(f"{module}.open_editor") as open_editor, \
+            patch(f"{module}.get_input") as get_input, \
             patch(f"{module}.read_file_contents") as read_file, \
             patch(f"{module}.append_weather_to_content") as append_weather_to_content, \
-            patch(f"{module}.send_message") as send_message, \
-            patch(f"{module}.get_input") as get_input:
+            patch(f"{module}.send_brags") as send_brags:
         # fmt: on
 
         get_input.return_value = "n"
@@ -503,7 +512,7 @@ def test_main_no_send() -> None:
         open_editor.assert_called_once()
         read_file.assert_not_called()
         append_weather_to_content.assert_not_called()
-        send_message.assert_not_called()
+        send_brags.assert_not_called()
 
 
 def test_main_create_config() -> None:
@@ -515,10 +524,10 @@ def test_main_create_config() -> None:
             patch(f"{module}.load_config") as load_config, \
             patch(f"{module}.create_if_missing") as create_if_missing, \
             patch(f"{module}.open_editor") as open_editor, \
+            patch(f"{module}.get_input") as get_input, \
             patch(f"{module}.read_file_contents") as read_file, \
             patch(f"{module}.append_weather_to_content") as append_weather_to_content, \
-            patch(f"{module}.send_message") as send_message, \
-            patch(f"{module}.get_input") as get_input:
+            patch(f"{module}.send_brags") as send_brags:
         # fmt: on
 
         get_input.return_value = "y"
@@ -537,7 +546,7 @@ def test_main_create_config() -> None:
         load_config.assert_not_called()
         create_if_missing.assert_not_called()
         open_editor.assert_not_called()
+        get_input.assert_not_called()
         read_file.assert_not_called()
         append_weather_to_content.assert_not_called()
-        send_message.assert_not_called()
-        get_input.assert_not_called()
+        send_brags.assert_not_called()

@@ -234,7 +234,7 @@ def post_brag_to_gist(config: Config, filename: str, content: str) -> None:
     url = config.github_api_url.replace("http://", "").replace("https://", "")
 
     if not config.github_user or not config.github_pat or not config.gist_id:
-        return
+        return None
 
     conn = http.client.HTTPSConnection(url)
     headers = {
@@ -441,6 +441,13 @@ def get_input(prompt: str) -> str:
     return input(prompt)
 
 
+def send_brags(config: Config, filename: str, content: str) -> None:
+    """Send brags to hooks or other targets."""
+    send_message(config, content)
+
+    post_brag_to_gist(config, filename, content)
+
+
 def main(_args: list[str] | None = None) -> int:
     """Run the program."""
     args = parse_args(_args)
@@ -461,8 +468,8 @@ def main(_args: list[str] | None = None) -> int:
 
     content = read_file_contents(filename)
     append_weather_to_content(config, content)
-    send_message(config, content)
-    post_brag_to_gist(config, filename, content)
+
+    send_brags(config, filename, content)
 
     return 0
 
