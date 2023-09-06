@@ -31,6 +31,7 @@ if TYPE_CHECKING:
             ...
 
 
+NEWFILE_NAME = datetime.now().strftime("brag-%Y-%m-%d.md")
 DEFAULT_CONFIG_FILE = "braghook.ini"
 DEFAULT_FILE_TEMPLATE = """### {date}
 
@@ -117,15 +118,17 @@ def create_empty_template_file(filename: str) -> None:
         )
 
 
-def create_filename(config: Config) -> str:
-    """Create the filename using the current date."""
-    return str(Path(config.workdir) / datetime.now().strftime("brag-%Y-%m-%d.md"))
+def get_full_filename(workdir: str, filename: str | None) -> str:
+    """Create bragfile if it doesn't exist. NEWFILE_NAME used if filename is None."""
+    if filename:
+        filename = str(Path(workdir) / filename)
+    else:
+        filename = str(Path(workdir) / NEWFILE_NAME)
 
-
-def create_if_missing(filename: str) -> None:
-    """Create the file if it doesn't exist."""
     if not Path(filename).exists():
         create_empty_template_file(filename)
+
+    return filename
 
 
 def read_file_contents(filename: str) -> str:
@@ -448,8 +451,7 @@ def main(_args: list[str] | None = None) -> int:
         return 0
 
     config = load_config(args.config)
-    filename = args.bragfile or create_filename(config)
-    create_if_missing(filename)
+    filename = get_full_filename(config.workdir, args.bragfile)
 
     if args.send:
         content = read_file_contents(filename)
