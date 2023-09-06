@@ -68,35 +68,33 @@ def test_create_config_does_not_overwrite() -> None:
         os.remove(file.name)
 
 
-def test_create_filename() -> None:
-    config = braghook.Config()
-    # Fun fact, this can fail if you run it at midnight
-    filename = Path(config.workdir) / datetime.now().strftime("brag-%Y-%m-%d.md")
-
-    assert braghook.create_filename(config) == str(filename)
-
-
-def test_create_if_missing() -> None:
-    filename = "tests/test-brag.md"
-
-    with patch("braghook.braghook.create_empty_template_file") as mock_create_file:
-        braghook.create_if_missing(filename)
-
-        mock_create_file.assert_called_once_with(filename)
-
-
-def test_create_if_missing_does_not_overwrite() -> None:
+def test_get_full_filename_exists_does_not_overrwite() -> None:
+    """Assert existing file is not overwritten."""
     with tempfile.NamedTemporaryFile(mode="w", delete=False) as file:
         file.write("Test")
+        filepath = Path(file.name)
 
     try:
         with patch("braghook.braghook.create_empty_template_file") as mock_create_file:
-            braghook.create_if_missing(file.name)
+            braghook.get_full_filename(str(filepath.parent), filepath.name)
 
         mock_create_file.assert_not_called()
 
     finally:
         os.remove(file.name)
+
+
+def test_get_full_filename_create_file() -> None:
+    """Assert we create a file matching the NEWFILE_NAME"""
+    config = braghook.Config()
+    # Fun fact, this can fail if you run it at midnight
+    filename = Path(config.workdir) / braghook.NEWFILE_NAME
+
+    with patch("braghook.braghook.create_empty_template_file") as mock_create_file:
+        result = braghook.get_full_filename(config.workdir, None)
+
+    assert result == str(filename)
+    assert mock_create_file.call_count == 1
 
 
 def test_open_editor_file_exists() -> None:
@@ -446,7 +444,7 @@ def test_main_send_only() -> None:
     # Turn black off to make this more readable and easier to maintain
     # fmt: off
     with patch("braghook.braghook.load_config") as load_config, \
-            patch(f"{module}.create_if_missing") as create_if_missing, \
+            patch(f"{module}.get_full_filename") as get_full_filename, \
             patch(f"{module}.open_editor") as open_editor, \
             patch(f"{module}.read_file_contents") as read_file, \
             patch(f"{module}.append_weather_to_content") as append_weather_to_content, \
@@ -463,7 +461,7 @@ def test_main_send_only() -> None:
 
         load_config.assert_called_once_with("tests/bh.ini")
         read_file.assert_called_once()
-        create_if_missing.assert_called_once()
+        get_full_filename.assert_called_once()
         append_weather_to_content.assert_called_once()
         send_brags.assert_called_once()
         open_editor.assert_not_called()
@@ -474,7 +472,7 @@ def test_main_no_send() -> None:
     # Turn black off to make this more readable and easier to maintain
     # fmt: off
     with patch(f"{module}.load_config") as load_config, \
-            patch(f"{module}.create_if_missing") as create_if_missing, \
+            patch(f"{module}.get_full_filename") as get_full_filename, \
             patch(f"{module}.open_editor") as open_editor, \
             patch(f"{module}.read_file_contents") as read_file, \
             patch(f"{module}.append_weather_to_content") as append_weather_to_content, \
@@ -489,7 +487,7 @@ def test_main_no_send() -> None:
         )
 
         load_config.assert_called_once_with("tests/braghook.ini")
-        create_if_missing.assert_called_once()
+        get_full_filename.assert_called_once()
         open_editor.assert_called_once()
 
         read_file.assert_not_called()
@@ -504,7 +502,7 @@ def test_main_create_config() -> None:
     # fmt: off
     with patch(f"{module}.create_config") as create_config, \
             patch(f"{module}.load_config") as load_config, \
-            patch(f"{module}.create_if_missing") as create_if_missing, \
+            patch(f"{module}.get_full_filename") as get_full_filename, \
             patch(f"{module}.open_editor") as open_editor, \
             patch(f"{module}.read_file_contents") as read_file, \
             patch(f"{module}.append_weather_to_content") as append_weather_to_content, \
@@ -522,7 +520,7 @@ def test_main_create_config() -> None:
         create_config.assert_called_once()
 
         load_config.assert_not_called()
-        create_if_missing.assert_not_called()
+        get_full_filename.assert_not_called()
         open_editor.assert_not_called()
         read_file.assert_not_called()
         append_weather_to_content.assert_not_called()
