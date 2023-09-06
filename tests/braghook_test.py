@@ -414,29 +414,20 @@ def test_build_msteams_webhook() -> None:
     assert result
 
 
-def test_get_input() -> None:
-    with patch("builtins.input") as mock_input:
-        mock_input.return_value = "y"
-
-        assert braghook.get_input("Test prompt") == "y"
-
-
 def test_parse_args() -> None:
     args = braghook.parse_args(
         [
-            "--config",
-            "tests/braghook.ini",
-            "--bragfile",
-            "tests/brag.md",
-            "--create-config",
-            "--auto-send",
+            "--send",
+            "--createconfig",
+            *("--bragfile", "tests/brag.md"),
+            *("--config", "tests/braghook.ini"),
         ]
     )
 
-    assert args.config == "tests/braghook.ini"
+    assert args.send is True
+    assert args.createconfig is True
     assert args.bragfile == "tests/brag.md"
-    assert args.create_config
-    assert args.auto_send
+    assert args.config == "tests/braghook.ini"
 
 
 def test_send_brags() -> None:
@@ -450,37 +441,32 @@ def test_send_brags() -> None:
     assert mock_post.call_count == 1
 
 
-def test_main() -> None:
+def test_main_send_only() -> None:
     module = "braghook.braghook"
     # Turn black off to make this more readable and easier to maintain
     # fmt: off
     with patch("braghook.braghook.load_config") as load_config, \
             patch(f"{module}.create_if_missing") as create_if_missing, \
             patch(f"{module}.open_editor") as open_editor, \
-            patch(f"{module}.get_input") as get_input, \
             patch(f"{module}.read_file_contents") as read_file, \
             patch(f"{module}.append_weather_to_content") as append_weather_to_content, \
             patch(f"{module}.send_brags") as send_brags:
         # fmt: on
 
-        get_input.return_value = "y"
-
         braghook.main(
             [
-                "--config",
-                "tests/bh.ini",
-                "--bragfile",
-                "tests/brag.md",
+                "--send",
+                *("--config", "tests/bh.ini"),
+                *("--bragfile", "tests/brag.md"),
             ]
         )
 
         load_config.assert_called_once_with("tests/bh.ini")
-        open_editor.assert_called_once()
         read_file.assert_called_once()
         create_if_missing.assert_called_once()
         append_weather_to_content.assert_called_once()
-        get_input.assert_called_once()
         send_brags.assert_called_once()
+        open_editor.assert_not_called()
 
 
 def test_main_no_send() -> None:
@@ -490,26 +476,22 @@ def test_main_no_send() -> None:
     with patch(f"{module}.load_config") as load_config, \
             patch(f"{module}.create_if_missing") as create_if_missing, \
             patch(f"{module}.open_editor") as open_editor, \
-            patch(f"{module}.get_input") as get_input, \
             patch(f"{module}.read_file_contents") as read_file, \
             patch(f"{module}.append_weather_to_content") as append_weather_to_content, \
             patch(f"{module}.send_brags") as send_brags:
         # fmt: on
 
-        get_input.return_value = "n"
-
         braghook.main(
             [
-                "--config",
-                "tests/braghook.ini",
-                "--bragfile",
-                "tests/brag.md",
+                *("--config", "tests/braghook.ini"),
+                *("--bragfile", "tests/brag.md"),
             ]
         )
 
         load_config.assert_called_once_with("tests/braghook.ini")
         create_if_missing.assert_called_once()
         open_editor.assert_called_once()
+
         read_file.assert_not_called()
         append_weather_to_content.assert_not_called()
         send_brags.assert_not_called()
@@ -524,29 +506,24 @@ def test_main_create_config() -> None:
             patch(f"{module}.load_config") as load_config, \
             patch(f"{module}.create_if_missing") as create_if_missing, \
             patch(f"{module}.open_editor") as open_editor, \
-            patch(f"{module}.get_input") as get_input, \
             patch(f"{module}.read_file_contents") as read_file, \
             patch(f"{module}.append_weather_to_content") as append_weather_to_content, \
             patch(f"{module}.send_brags") as send_brags:
         # fmt: on
 
-        get_input.return_value = "y"
-
         braghook.main(
             [
-                "--config",
-                "tests/braghook.ini",
-                "--bragfile",
-                "tests/brag.md",
-                "--create-config",
+                "--createconfig",
+                *("--config", "tests/braghook.ini"),
+                *("--bragfile", "tests/brag.md"),
             ]
         )
 
         create_config.assert_called_once()
+
         load_config.assert_not_called()
         create_if_missing.assert_not_called()
         open_editor.assert_not_called()
-        get_input.assert_not_called()
         read_file.assert_not_called()
         append_weather_to_content.assert_not_called()
         send_brags.assert_not_called()

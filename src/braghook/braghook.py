@@ -408,37 +408,28 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     """Parse the arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        "--send",
+        action="store_true",
+        help="Send the brag",
+    )
+    parser.add_argument(
+        "--createconfig",
+        action="store_true",
+        help="Create the config file",
+    )
+    parser.add_argument(
         "--bragfile",
-        "-b",
         type=str,
         help="The brag file to use",
         default=None,
     )
     parser.add_argument(
-        "--create-config",
-        "-C",
-        action="store_true",
-        help="Create the config file",
-    )
-    parser.add_argument(
-        "--auto-send",
-        "-a",
-        action="store_true",
-        help="Automatically send the brag",
-    )
-    parser.add_argument(
         "--config",
-        "-c",
         type=str,
         default=DEFAULT_CONFIG_FILE,
         help="The config file to use",
     )
     return parser.parse_args(args)
-
-
-def get_input(prompt: str) -> str:
-    """Get input from the user."""
-    return input(prompt)
 
 
 def send_brags(config: Config, filename: str, content: str) -> None:
@@ -452,24 +443,23 @@ def main(_args: list[str] | None = None) -> int:
     """Run the program."""
     args = parse_args(_args)
 
-    if args.create_config:
+    if args.createconfig:
         create_config()
         return 0
 
     config = load_config(args.config)
     filename = args.bragfile or create_filename(config)
-
     create_if_missing(filename)
 
-    open_editor(config, filename)
+    if args.send:
+        content = read_file_contents(filename)
+        append_weather_to_content(config, content)
 
-    if not args.auto_send and get_input("Send brag? [y/N] ").lower() != "y":
+        send_brags(config, filename, content)
+
         return 0
 
-    content = read_file_contents(filename)
-    append_weather_to_content(config, content)
-
-    send_brags(config, filename, content)
+    open_editor(config, filename)
 
     return 0
 

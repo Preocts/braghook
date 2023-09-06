@@ -1,4 +1,4 @@
-[![Python 3.8 | 3.9 | 3.10 | 3.11](https://img.shields.io/badge/Python-3.8%20%7C%203.9%20%7C%203.10%20%7C%203.11-blue)](https://www.python.org/downloads)
+[![Python 3.8 | 3.9 | 3.10 | 3.11 | 3.12](https://img.shields.io/badge/Python-3.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)](https://www.python.org/downloads)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 
@@ -43,17 +43,16 @@ is completely stand-alone and can be invoked directly.
 ### Usage:
 
 ```console
-usage: braghook [-h] [--bragfile BRAGFILE] [--create-config] [--auto-send] [--config CONFIG]
+braghook --help
+usage: braghook [-h] [--send] [--createconfig] [--bragfile BRAGFILE] [--config CONFIG]
 
 optional arguments:
-  -h, --help            show this help message and exit
-  --bragfile BRAGFILE, -b BRAGFILE
-                        The brag file to use
-  --create-config, -C   Create the config file
-  --auto-send, -a       Automatically send the brag
-  --config CONFIG, -c CONFIG
-                        The config file to use
-  ```
+  -h, --help           show this help message and exit
+  --send               Send the brag
+  --createconfig       Create the config file
+  --bragfile BRAGFILE  The brag file to use
+  --config CONFIG      The config file to use
+```
 
 ### Config file:
 
