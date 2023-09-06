@@ -34,11 +34,11 @@ if TYPE_CHECKING:
 DEFAULT_CONFIG_FILE = "braghook.ini"
 DEFAULT_FILE_TEMPLATE = """### {date}
 
-Write your brag here. Summarize what you did today, what you learned,
- and what you plan to do tomorrow.
+Motivation summary:
 
-- Bullet specific things you did (meetings, tasks, etc.)
-  - Nest details such as links to tasks, commits, or PRs
+Shout outs:
+
+Improvements:
 
 """
 
@@ -234,7 +234,7 @@ def post_brag_to_gist(config: Config, filename: str, content: str) -> None:
     url = config.github_api_url.replace("http://", "").replace("https://", "")
 
     if not config.github_user or not config.github_pat or not config.gist_id:
-        return
+        return None
 
     conn = http.client.HTTPSConnection(url)
     headers = {
@@ -408,27 +408,23 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     """Parse the arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        "--send",
+        action="store_true",
+        help="Send the brag",
+    )
+    parser.add_argument(
+        "--createconfig",
+        action="store_true",
+        help="Create the config file",
+    )
+    parser.add_argument(
         "--bragfile",
-        "-b",
         type=str,
         help="The brag file to use",
         default=None,
     )
     parser.add_argument(
-        "--create-config",
-        "-C",
-        action="store_true",
-        help="Create the config file",
-    )
-    parser.add_argument(
-        "--auto-send",
-        "-a",
-        action="store_true",
-        help="Automatically send the brag",
-    )
-    parser.add_argument(
         "--config",
-        "-c",
         type=str,
         default=DEFAULT_CONFIG_FILE,
         help="The config file to use",
@@ -436,33 +432,34 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(args)
 
 
-def get_input(prompt: str) -> str:
-    """Get input from the user."""
-    return input(prompt)
+def send_brags(config: Config, filename: str, content: str) -> None:
+    """Send brags to hooks or other targets."""
+    send_message(config, content)
+
+    post_brag_to_gist(config, filename, content)
 
 
 def main(_args: list[str] | None = None) -> int:
     """Run the program."""
     args = parse_args(_args)
 
-    if args.create_config:
+    if args.createconfig:
         create_config()
         return 0
 
     config = load_config(args.config)
     filename = args.bragfile or create_filename(config)
-
     create_if_missing(filename)
 
-    open_editor(config, filename)
+    if args.send:
+        content = read_file_contents(filename)
+        append_weather_to_content(config, content)
 
-    if not args.auto_send and get_input("Send brag? [y/N] ").lower() != "y":
+        send_brags(config, filename, content)
+
         return 0
 
-    content = read_file_contents(filename)
-    append_weather_to_content(config, content)
-    send_message(config, content)
-    post_brag_to_gist(config, filename, content)
+    open_editor(config, filename)
 
     return 0
 
