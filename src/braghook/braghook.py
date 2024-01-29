@@ -1,6 +1,7 @@
 """
 BragHook.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -27,8 +28,7 @@ if TYPE_CHECKING:
             author: str,
             author_icon: str,
             content: str,
-        ) -> dict[str, Any]:
-            ...
+        ) -> dict[str, Any]: ...
 
 
 NEWFILE_NAME = datetime.now().strftime("brag-%Y-%m-%d.md")
