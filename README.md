@@ -7,6 +7,8 @@
 
 # braghook
 
+# *Archived*
+
 Recording daily achievements and posting them places. Running `braghook` will
 open a file in the editor of choice for the current day. Once completed you will
 be prompted to send the brag to the configuration file defined targets.
